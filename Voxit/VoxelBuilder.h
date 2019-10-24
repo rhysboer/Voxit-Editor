@@ -99,12 +99,9 @@ private:
 	// ICONS
 	bool buttonStates[(unsigned int)ToolIDs::COUNT] = { false };
 
-	//World world = World();
 	int offset = 0;
 	int offsetZ = 0;
 	int offsetY = 0;
-
-	ShadowMapping* shadow;
 
 	unsigned int VBO, VAO, EBO;
 };
@@ -120,5 +117,6 @@ private:
 	- Change rendering to chunk based meshes [DONE]
 	- Finish GUI, (add coordinates, 'file' buttons)
 	- Hotkeys for drawing [DONE]
+	- Change Enable Lighting into the W component of the vec4 of the light direction
 
 */

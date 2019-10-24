@@ -31,6 +31,7 @@ int main() {
 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
+		glDepthFunc(GL_LEQUAL);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 		SetupImGui(window->GetWindow());

@@ -2,10 +2,13 @@
 
 Chunk* World::chunks[5][5][5];
 Shader* World::shader = nullptr;
+ShadowMapping* World::shadow = nullptr;
 unsigned int World::totalVoxels = 0;
+
 
 void World::InitWorld() {
 	shader = ShaderManager::GetShader("voxel");
+	shadow = new ShadowMapping(1024*2, 1024*2);
 	totalVoxels = 0;
 
 	for(int y = 0; y < worldSize; y++) {
@@ -151,10 +154,26 @@ void World::RemoveBlocks(const std::vector<Voxel>& voxels) {
 }
 
 void World::Draw() {
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, shadow->GetDepthMap());
+
+	shader->SetMatrix4("_lightMatrix", shadow->GetDepthPV());
 	shader->SetFloat("_showOutline", (float)Settings::useVoxelOutline);
 	shader->SetFloat("_showLighting", (float)Settings::useSun);
 	//shader->SetFloat("_showShadow", (float)Settings::useShadow);
-	shader->SetVector3("_lightDire", Settings::sunDirection);
+	//shader->SetVector3("_lightDire", Settings::sunDirection);
+
+	shader->SetVector3("_sunPosition", glm::normalize(shadow->GetPosition()));
+
+	glm::vec3 pos = shadow->GetPosition();
+	float radian = glm::radians(Time::DeltaTime() * 15.0f);// % 360;
+	printf("%f\n", radian);
+	float _z = pos.z * cos(radian) - pos.x * sin(radian);
+	float _x = pos.z * sin(radian) + pos.x * cos(radian);
+
+
+
+	shadow->SetPosition(glm::vec3(_x, pos.y, _z));
 
 	shader->SetMatrix4("_view", Camera::ActiveCamera->View());
 	shader->SetMatrix4("_projection", Camera::ActiveCamera->Projection());
@@ -175,14 +194,19 @@ void World::Draw() {
 	}
 }
 
-void World::DepthMapDraw(Shader* depthShader) {
+void World::DepthMapDraw() {
+	shadow->FrameBuffer_Start();
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_FRONT);
 	for(int x = 0; x < worldSize; x++) {
 		for(int y = 0; y < worldSize; y++) {
 			for(int z = 0; z < worldSize; z++) {
-				chunks[x][y][z]->DrawMesh(*depthShader);
+				chunks[x][y][z]->DrawMesh(*shadow->GetShader());
 			}
 		}
 	}
+	//glDisable(GL_CULL_FACE);
+	shadow->FrameBuffer_End();
 }
 
 Chunk* const World::GetVoxelChunk(const glm::ivec3& voxelPos) {

@@ -5,6 +5,8 @@
 #include "Chunk.h"
 #include "Camera.h"
 
+#include "ShadowMapping.h"
+
 class World {
 public:
 	static void InitWorld();
@@ -14,7 +16,11 @@ public:
 	static void RemoveBlocks(const std::vector<Voxel>& voxels);
 
 	static void Draw();
-	static void DepthMapDraw(Shader* depthShader);
+	static void DepthMapDraw();
+
+	static ShadowMapping* GetSHADOW() {
+		return shadow;
+	}
 
 	// Return voxels chunk
 	static Chunk* const GetVoxelChunk(const glm::ivec3& voxelPos); // Returns chunk the voxel position is in, nullptr if out of bounds
@@ -33,10 +39,13 @@ public:
 
 private:
 
+
 	static glm::ivec3 GetChunkIndex(glm::vec3 voxelPos);
 
 	static Shader* shader;
+	static ShadowMapping* shadow;
 	static unsigned int totalVoxels;
+
 
 	const static int worldSize = 5;
 	static Chunk* chunks[worldSize][worldSize][worldSize]; 

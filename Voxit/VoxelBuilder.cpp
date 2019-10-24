@@ -19,37 +19,6 @@ VoxelBuilder::VoxelBuilder() : history(historySize) {
 
 	World::InitWorld();
 
-	shadow = new ShadowMapping(1024, 1024);
-
-	/*
-	float points[] = {
-		-1.0f, -1.0f, 0.0f,	0.0f, 0.0f,			// BOT LEFT
-		-1.0f, -0.6f, 0.0f,	0.0f, 1.0f,			// TOP LEFT
-		-0.6f, -1.0,  0.0f,	1.0f, 0.0f,			// BOT RIGHT
-
-		-0.6f, -0.6f, 0.0f, 1.0f, 1.0f,
-		-0.6f, -1.0f, 0.0f, 1.0f, 0.0f,
-		-1.0f, -0.6f, 0.0f, 0.0f, 1.0f
-	};
-
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, 30 * sizeof(float), points, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	*/
-
-
-
-
-
-
 	float vertices[] = {
 		// positions          // colors           // texture coords
 		 -0.6f, -0.6f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
@@ -58,8 +27,8 @@ VoxelBuilder::VoxelBuilder() : history(historySize) {
 		-1.0f,  -0.6f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
 	};
 	unsigned int indices[] = {
-		0, 1, 3, // first triangle
-		1, 2, 3  // second triangle
+		0, 3, 1, // first triangle
+		2, 1, 3  // second triangle
 	};
 
 	glGenVertexArrays(1, &VAO);
@@ -143,23 +112,21 @@ void VoxelBuilder::OnUpdate() {
 }
 
 void VoxelBuilder::OnDraw(Camera* camera) {
-	shadow->FrameBuffer_Start();
-	grid.OnDraw(camera);
-	World::DepthMapDraw(shadow->GetShader());
-	shadow->FrameBuffer_End();
+	// DRAW DEPTH MAP
+	World::DepthMapDraw();
 
+	// DRAW SCENE
+	grid.OnDraw(camera);
+
+	World::Draw();
+	
 	Shader* shader = ShaderManager::GetShader("screen");
 	shader->UseProgram();
+	
+	
+	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D, shadow->GetDepthMap());
-	//
-	//glBindVertexArray(VAO);
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-
-	grid.OnDraw(camera);
-	World::Draw();
 	selector.OnDraw(camera);
 }
 
@@ -169,7 +136,7 @@ void VoxelBuilder::ToolPlace() {
 	if(Input::IsMouseKeyDown(GLFW_MOUSE_BUTTON_LEFT)) {
 		if(this->isSelecting == false) {
 
-			RaycastHit hit = Raycaster::TEST_VoxelDetection();// (&voxelMap);
+			RaycastHit hit = Raycaster::TEST_VoxelDetection();
 
 			if(IsValidMapPos(hit.position)) {
 				selector.SetActive(true);
@@ -611,6 +578,10 @@ void VoxelBuilder::DrawGUI() {
 	ImGui::Text("Start Pos: %.1f, %.1f, %.1f", selector.GetStart().x, selector.GetStart().y, selector.GetStart().z);
 	ImGui::Text("End Pos: %.1f, %.1f, %.1f", selector.GetEnd().x, selector.GetEnd().y, selector.GetEnd().z);
 	ImGui::Text("Size: %.1f, %.1f, %.1f", distance.x, distance.y, distance.z);
+
+	glm::vec3 d_norm = World::GetSHADOW()->GetPosition();
+	ImGui::Text("DEBUG_\n: %.3f, %.3f, %.3f", d_norm.x, d_norm.y, d_norm.z);
+	ImGui::Text("Atan: %.1f", glm::degrees(atan2(cos(glfwGetTime()), sin(glfwGetTime()))));
 
 	ImGui::End();
 

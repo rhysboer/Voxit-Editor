@@ -54,11 +54,20 @@ void Chunk::RegenerateMesh() {
 						 0.5f + pos.x,  0.5f + pos.y, -0.5f + pos.z,/*BR*/	0.0f, 1.0f,		 0.0f,  1.0f,  0.0f,		col.r, col.g, col.b,
 						 0.5f + pos.x,  0.5f + pos.y,  0.5f + pos.z,/*FR*/	0.0f, 0.0f,		 0.0f,  1.0f,  0.0f,		col.r, col.g, col.b
 					});
-					
-					++toAdd;
-					vertices.insert(vertices.end(), verts.begin(), verts.end());
-				}
 
+					vertices.insert(vertices.end(), verts.begin(), verts.end());
+
+					index.push_back(iCount + 1);
+					index.push_back(iCount);
+					index.push_back(iCount + 3);
+
+					index.push_back(iCount + 2);
+					index.push_back(iCount + 1);
+					index.push_back(iCount + 3);
+
+					iCount += 4;
+				}
+				
 				if(!HasNeighbour(voxels[x][y][z]->position, Direction::DOWN)) {
 					std::vector<float> verts = std::vector<float>({
 						-0.5f + pos.x, -0.5f + pos.y,  0.5f + pos.z,		1.0f, 0.0f,		 0.0f, -1.0f,  0.0f,		col.r, col.g, col.b,
@@ -67,8 +76,17 @@ void Chunk::RegenerateMesh() {
 						 0.5f + pos.x, -0.5f + pos.y,  0.5f + pos.z,		0.0f, 0.0f,		 0.0f, -1.0f,  0.0f,		col.r, col.g, col.b
 					});
 				
-					++toAdd;
 					vertices.insert(vertices.end(), verts.begin(), verts.end());
+
+					index.push_back(iCount);
+					index.push_back(iCount + 1);
+					index.push_back(iCount + 3);
+
+					index.push_back(iCount + 1);
+					index.push_back(iCount + 2);
+					index.push_back(iCount + 3);
+
+					iCount += 4;
 				}
 				
 				if(!HasNeighbour(voxels[x][y][z]->position, Direction::WEST)) {
@@ -79,8 +97,17 @@ void Chunk::RegenerateMesh() {
 						-0.5f + pos.x,  0.5f + pos.y,  0.5f + pos.z,		0.0f, 0.0f,		-1.0f,  0.0f,  0.0f,		col.r, col.g, col.b
 					});
 				
-					++toAdd;
 					vertices.insert(vertices.end(), verts.begin(), verts.end());
+
+					index.push_back(iCount + 1);
+					index.push_back(iCount);
+					index.push_back(iCount + 3);
+
+					index.push_back(iCount + 2);
+					index.push_back(iCount + 1);
+					index.push_back(iCount + 3);
+
+					iCount += 4;
 				}
 				
 				if(!HasNeighbour(voxels[x][y][z]->position, Direction::EAST)) {
@@ -91,8 +118,17 @@ void Chunk::RegenerateMesh() {
 						0.5f + pos.x,  0.5f + pos.y,  0.5f + pos.z,			0.0f, 0.0f,		 1.0f,  0.0f,  0.0f,		col.r, col.g, col.b
 					});
 				
-					++toAdd;
 					vertices.insert(vertices.end(), verts.begin(), verts.end());
+
+					index.push_back(iCount);
+					index.push_back(iCount + 1);
+					index.push_back(iCount + 3);
+
+					index.push_back(iCount + 1);
+					index.push_back(iCount + 2);
+					index.push_back(iCount + 3);
+
+					iCount += 4;
 				}
 				
 				if(!HasNeighbour(voxels[x][y][z]->position, Direction::NORTH)) {
@@ -103,8 +139,17 @@ void Chunk::RegenerateMesh() {
 						 0.5f + pos.x, -0.5f + pos.y, -0.5f + pos.z,		0.0f, 0.0f,		 0.0f,  0.0f, -1.0f, 		col.r, col.g, col.b
 					});
 				
-					++toAdd;
 					vertices.insert(vertices.end(), verts.begin(), verts.end());
+
+					index.push_back(iCount);
+					index.push_back(iCount + 1);
+					index.push_back(iCount + 3);
+
+					index.push_back(iCount + 1);
+					index.push_back(iCount + 2);
+					index.push_back(iCount + 3);
+
+					iCount += 4;
 				}
 				
 				if(!HasNeighbour(voxels[x][y][z]->position, Direction::SOUTH)) {
@@ -115,19 +160,15 @@ void Chunk::RegenerateMesh() {
 						 0.5f + pos.x, -0.5f + pos.y,  0.5f + pos.z,		0.0f, 0.0f,		 0.0f,  0.0f,  1.0f,		col.r, col.g, col.b
 					});
 				
-					++toAdd;
 					vertices.insert(vertices.end(), verts.begin(), verts.end());
-				}
 
-				for(int i = 0; i < toAdd; i++) {
+					index.push_back(iCount + 1);
 					index.push_back(iCount);
-					index.push_back(iCount + 1);
 					index.push_back(iCount + 3);
-				
-					index.push_back(iCount + 1);
 					index.push_back(iCount + 2);
+					index.push_back(iCount + 1);
 					index.push_back(iCount + 3);
-				
+
 					iCount += 4;
 				}
 			}

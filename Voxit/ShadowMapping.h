@@ -16,17 +16,22 @@ public:
 	void FrameBuffer_Start();
 	void FrameBuffer_End();
 
-
 	Shader* GetShader() const;
 	unsigned int GetDepthMap() const;
+	glm::mat4 GetDepthPV() const;
+
+	void SetPosition(const glm::vec3& pos);
+	glm::vec3 GetPosition() const;
+
 private:
 	void InitDepthBuffer();
 	
 	Shader* shader = nullptr;
 
-	glm::mat4 lightMatrix;
+	glm::vec3 position;
+	glm::mat4 depthPV;
 
-	unsigned int depthMapFBO;	// FRAME BUFFER OBJECT
+	unsigned int FBO;	// FRAME BUFFER OBJECT
 	unsigned int depthMap;		// Texture
 	unsigned int width, height;
 };

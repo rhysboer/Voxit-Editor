@@ -8,7 +8,7 @@ void ShaderManager::InitShaders() {
 	AddShader("lineColour");
 	AddShader("selector");
 	AddShader("voxel");
-	AddShader("voxelBasic");
+	AddShader("depth");
 
 	AddShader("screen");
 }

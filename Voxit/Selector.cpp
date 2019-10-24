@@ -120,7 +120,9 @@ void Selector::OnDraw(Camera* camera) {
 	if(!isActive) return;
 
 	glDepthMask(GL_FALSE);
+
 	glBindVertexArray(vao);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
 	glDepthMask(GL_TRUE);
 }
