@@ -7,10 +7,7 @@ unsigned int World::totalVoxels = 0;
 
 
 void World::InitWorld() {
-	shader = ShaderManager::GetShader("voxel");
-	shadow = new ShadowMapping(1024*2, 1024*2);
-	totalVoxels = 0;
-
+	// Create Chunks
 	for(int y = 0; y < worldSize; y++) {
 		for(int z = 0; z < worldSize; z++) {
 			for(int x = 0; x < worldSize; x++) {
@@ -23,6 +20,17 @@ void World::InitWorld() {
 			}
 		}
 	}
+
+	shader = ShaderManager::GetShader("voxel");
+	shadow = new ShadowMapping(1024 * 2);
+	totalVoxels = 0;
+
+
+	
+	// Set Texture Unit
+	shader->SetTextureUnit("shadowMap[0]", 0);
+	shader->SetTextureUnit("shadowMap[1]", 1);
+	shader->SetTextureUnit("shadowMap[2]", 2);
 }
 
 void World::DestroyWorld() {
@@ -154,27 +162,23 @@ void World::RemoveBlocks(const std::vector<Voxel>& voxels) {
 }
 
 void World::Draw() {
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, shadow->GetDepthMap());
+	// Set light matrix
+	shader->SetMatrix4("_lightData.lightMatrix[0]", shadow->GetDepthPV(0));
+	shader->SetMatrix4("_lightData.lightMatrix[1]", shadow->GetDepthPV(1));
+	shader->SetMatrix4("_lightData.lightMatrix[2]", shadow->GetDepthPV(2));
+	shader->SetVector4("_lightData.lightDirection", glm::vec4(Settings::sunDirection, (float)Settings::useLighting));
 
-	shader->SetMatrix4("_lightMatrix", shadow->GetDepthPV());
+	// Set Cascade Split Lengths
+	shader->SetFloat("_lightData.cascadeSplits[0]", shadow->GetCascadeSplit(0));
+	shader->SetFloat("_lightData.cascadeSplits[1]", shadow->GetCascadeSplit(1));
+	shader->SetFloat("_lightData.cascadeSplits[2]", shadow->GetCascadeSplit(2));
+
+	printf("x)%f, y)%f, z)%f, w)%f\n", Settings::sunDirection.x, Settings::sunDirection.y, Settings::sunDirection.z, (float)Settings::useLighting);
+
+	// Settings
 	shader->SetFloat("_showOutline", (float)Settings::useVoxelOutline);
-	shader->SetFloat("_showLighting", (float)Settings::useSun);
-	//shader->SetFloat("_showShadow", (float)Settings::useShadow);
-	//shader->SetVector3("_lightDire", Settings::sunDirection);
 
-	shader->SetVector3("_sunPosition", glm::normalize(shadow->GetPosition()));
-
-	glm::vec3 pos = shadow->GetPosition();
-	float radian = glm::radians(Time::DeltaTime() * 15.0f);// % 360;
-	printf("%f\n", radian);
-	float _z = pos.z * cos(radian) - pos.x * sin(radian);
-	float _x = pos.z * sin(radian) + pos.x * cos(radian);
-
-
-
-	shadow->SetPosition(glm::vec3(_x, pos.y, _z));
-
+	// Set model data
 	shader->SetMatrix4("_view", Camera::ActiveCamera->View());
 	shader->SetMatrix4("_projection", Camera::ActiveCamera->Projection());
 
@@ -194,19 +198,18 @@ void World::Draw() {
 	}
 }
 
-void World::DepthMapDraw() {
-	shadow->FrameBuffer_Start();
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_FRONT);
-	for(int x = 0; x < worldSize; x++) {
-		for(int y = 0; y < worldSize; y++) {
-			for(int z = 0; z < worldSize; z++) {
-				chunks[x][y][z]->DrawMesh(*shadow->GetShader());
+void World::DrawShadow() {
+	for(int i = 0; i < shadow->CASCADE_AMOUNT; i++) {
+		shadow->FrameBuffer_Start(i);
+		for(int x = 0; x < worldSize; x++) {
+			for(int y = 0; y < worldSize; y++) {
+				for(int z = 0; z < worldSize; z++) {
+					chunks[x][y][z]->DrawMesh(*shadow->GetShader());
+				}
 			}
 		}
+		shadow->FrameBuffer_End(i);
 	}
-	//glDisable(GL_CULL_FACE);
-	shadow->FrameBuffer_End();
 }
 
 Chunk* const World::GetVoxelChunk(const glm::ivec3& voxelPos) {

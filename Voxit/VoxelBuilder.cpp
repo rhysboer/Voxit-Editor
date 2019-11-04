@@ -111,21 +111,28 @@ void VoxelBuilder::OnUpdate() {
 	}
 }
 
-void VoxelBuilder::OnDraw(Camera* camera) {
+void VoxelBuilder::Render(Camera* camera) {
 	// DRAW DEPTH MAP
-	World::DepthMapDraw();
+	World::DrawShadow();
 
-	// DRAW SCENE
 	grid.OnDraw(camera);
-
 	World::Draw();
 	
+	// DRAW SCENE
+	World::GetSHADOW()->BindDepthTextures();
 	Shader* shader = ShaderManager::GetShader("screen");
-	shader->UseProgram();
-	
-	
-	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	for(int i = 0; i < 3; i++) {
+		shader->SetVector3("position", glm::vec3(0.41f * i, 0, 0));
+		shader->SetFloat("depthIndex", i);
+		shader->SetTextureUnit("depthMap_zro", 0);
+		shader->SetTextureUnit("depthMap_one", 1);
+		shader->SetTextureUnit("depthMap_two", 2);
+		
+		shader->UseProgram();
+		
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	}
 
 	selector.OnDraw(camera);
 }
@@ -396,7 +403,7 @@ void VoxelBuilder::DrawGUI() {
 			ImGui::Spacing();
 			ImGui::Text("Lighting Settings");
 
-			ImGui::Checkbox("Enable Lighting", &Settings::useSun);
+			ImGui::Checkbox("Enable Lighting", &Settings::useLighting);
 			ImGui::Checkbox("Enable Shadows", &Settings::useShadow);
 
 			ImGui::Text("Sun Direction: (X, Y, Z)");
@@ -579,9 +586,25 @@ void VoxelBuilder::DrawGUI() {
 	ImGui::Text("End Pos: %.1f, %.1f, %.1f", selector.GetEnd().x, selector.GetEnd().y, selector.GetEnd().z);
 	ImGui::Text("Size: %.1f, %.1f, %.1f", distance.x, distance.y, distance.z);
 
-	glm::vec3 d_norm = World::GetSHADOW()->GetPosition();
-	ImGui::Text("DEBUG_\n: %.3f, %.3f, %.3f", d_norm.x, d_norm.y, d_norm.z);
-	ImGui::Text("Atan: %.1f", glm::degrees(atan2(cos(glfwGetTime()), sin(glfwGetTime()))));
+
+	//d_rotation = glm::rotate(d_rotation, 1.0f * Time::DeltaTime(), glm::vec3(1, 0, 0));
+
+	//Settings::sunMatrix = glm::rotate(Settings::sunMatrix, Time::DeltaTime(), glm::vec3(0, 1, 0));
+
+	glm::vec3 d_forward = glm::vec3(d_rotation[2]);
+	glm::vec3 d_up = glm::vec3(d_rotation[1]);
+
+	glm::vec3 d_right = glm::cross(d_forward, d_up);
+
+	Renderer::Clear();
+	Renderer::AddLine(glm::vec3(0.0f, 5.0f, 0.0f), d_forward	+ glm::vec3(0, 5, 0), glm::vec3(0, 0, 1)); // FORWARD
+	Renderer::AddLine(glm::vec3(0.0f, 5.0f, 0.0f), d_up			+ glm::vec3(0, 5, 0), glm::vec3(0, 1, 0)); // FORWARD
+	Renderer::AddLine(glm::vec3(0.0f, 5.0f, 0.0f), d_right		+ glm::vec3(0, 5, 0), glm::vec3(1, 0, 0));
+	
+	
+	ImGui::Text("FORWARD: %.2f, %.2f, %.2f", d_forward.x, d_forward.y, d_forward.z);
+	ImGui::Text("UP: %.2f, %.2f, %.2f", d_up.x, d_up.y, d_up.z);
+	ImGui::Text("RIGHT: %.2f, %.2f, %.2f", d_right.x, d_right.y, d_right.z);
 
 	ImGui::End();
 

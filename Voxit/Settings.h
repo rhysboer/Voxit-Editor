@@ -8,6 +8,6 @@ namespace Settings {
 	extern bool useVoxelOutline;
 	extern bool useShadow;
 	extern bool useGrid;
-	extern bool useSun;
+	extern bool useLighting;
 	extern bool useHighlighterSize;
 }

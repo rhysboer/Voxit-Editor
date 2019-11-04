@@ -1,43 +1,41 @@
 // VOXEL FRAG
 #version 330 core
+#define RADIUS 0.98f // Outline Radius
 
-uniform sampler2D shadowMap;
+const int CASCADE_NUM = 3;
 
+// Shadow Maps
+uniform sampler2D shadowMap[CASCADE_NUM];
+
+// Object Data
 in vec2 texCoord;
 in vec3 colour;
 in vec3 normal;
-//in vec3 sun;
-in vec3 sunPos;
 in vec3 fragPos;
 
 // SETTINGS IN
 in float showOutline;
-in float showLighting;
-in float showShadow;
 
 // LIGHTING IN
-in vec4 fragLightSpace;
+in vec4 fragLightSpace[CASCADE_NUM];
+in float cascadeSize[CASCADE_NUM]; 
+in vec4 sunDirection;
+in float clipSpaceZ;
 
 // Colour Out
 out vec4 FragColor;
 
-float Shadow(vec4 lightSpace)
+float Shadow(vec4 lightSpace, int shadowIndex)
 {
-    // perform perspective divide
-    vec3 projCoords = lightSpace.xyz / lightSpace.w;
-    // transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(shadowMap, projCoords.xy).r; 
-    // get depth of current fragment from light's perspective
+    vec3 projCoords = lightSpace.xyz * 0.5 + 0.5;
+
+    float closestDepth = texture(shadowMap[shadowIndex], projCoords.xy).r; 
+	
     float currentDepth = projCoords.z;
-    // check whether current frag pos is in shadow
+
+    float shadow = currentDepth - 0.0008f > closestDepth  ? 1.0 : 0.0; // - 0.0008f
 	
-	//vec3 lightDir = normalize(sunPos - fragPos);
-	//float bias = max(0.0005 * (1.0 - dot(normal, lightDir)), 0.001);  
-    float shadow = currentDepth - 0.001f > closestDepth  ? 1.0 : 0.0;
-	
-	if(projCoords.z > 1.0 || dot(normal, sunPos) == 0.0f)
+	if(projCoords.z > 1.0)
 		shadow = 0.0;
 	
 	return shadow;
@@ -45,6 +43,49 @@ float Shadow(vec4 lightSpace)
 
 void main()
 {
+	// OUTLINE
+	float x = step(texCoord.x, RADIUS);
+	float y = step(texCoord.y, RADIUS);
+	float dx = step(1.0f - texCoord.x, RADIUS);
+	float dy = step(1.0f - texCoord.y, RADIUS);
+	
+	float outline = (round(showOutline) >= 1.0) ? (x*dx*y*dy) : 1.0f;
+	
+	vec3 fragment = colour;
+	
+	// LIGHTING
+	if(round(sunDirection.w) >= 1.0f){ 
+		// DIFFUSE
+		float diffuse = max(dot(normal, sunDirection.xyz), 0.3f);
+		
+		// SHADOWING
+		float shade = 0.0f;
+		for(int i = 0; i < CASCADE_NUM; i++){
+			if(clipSpaceZ <= cascadeSize[i]){// cascadeSize[i]
+				//if(i == 0) fragment = vec3(1.0f, 0.0f, 0.0f);
+				//if(i == 1) fragment = vec3(0.0f, 1.0f, 0.0f);
+				//if(i == 2) fragment = vec3(0.0f, 0.0f, 1.0f);
+				shade = Shadow(fragLightSpace[i], i);
+				break;
+			}
+		}
+
+		fragment = (shade > 0.5f) ? colour * (1.3 - shade) : colour * diffuse;
+	}
+	
+	//fragment = vec3(clipSpaceZ, clipSpaceZ, clipSpaceZ);
+	
+	// END
+	FragColor = vec4(fragment * outline, 1.0f);
+} 
+
+
+
+/*
+
+
+
+
 	// LIGHTING
 	vec3 diffuse = vec3(1.0f);
 	
@@ -69,11 +110,18 @@ void main()
 			fragment = vec3(((1.3 - shade) * vec3(1.0) * colour) * (x*dx*y*dy));
 		}
 		
-		FragColor = vec4(fragment, 1.0f);
+		//FragColor = vec4(fragment, 1.0f);
+	
+		FragColor = vec4((colour.rgb * 1.3 - shade) * (x*dx*y*dy), 1.0f);
 	
 
 		//FragColor = vec4(((diffuse * colour.rgb) * (1.3 - Shadow(fragLightSpace))) * (x*dx*y*dy) , 1.0f); // * (x*dx*y*dy)
 	}else{
 		FragColor = vec4((diffuse * colour.rgb) * (1.0 - Shadow(fragLightSpace)), 1.0f);
 	}
-} 
+
+
+
+
+
+*/

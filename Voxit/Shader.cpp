@@ -101,6 +101,17 @@ void Shader::SetVector3(const char* name, glm::vec3 value) {
 	glUniform3f(loc, value.r, value.g, value.b);
 }
 
+void Shader::SetTextureUnit(const char* name, const unsigned int& textureUnit) {
+	UseProgram();
+
+	unsigned int loc = glGetUniformLocation(shaderProgram, name);
+	if(loc == -1) {
+		printf("Error finding Mat4 Uniform: %s\n", name);
+		return;
+	}
+	glUniform1i(loc, textureUnit);
+}
+
 bool Shader::ErrorHandler(unsigned int toTest, unsigned int statusType) {
 	int success;
 	int logSize = 0;

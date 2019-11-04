@@ -16,7 +16,7 @@ public:
 	static void RemoveBlocks(const std::vector<Voxel>& voxels);
 
 	static void Draw();
-	static void DepthMapDraw();
+	static void DrawShadow();
 
 	static ShadowMapping* GetSHADOW() {
 		return shadow;
@@ -42,6 +42,7 @@ private:
 
 	static glm::ivec3 GetChunkIndex(glm::vec3 voxelPos);
 
+	// World Voxel Shader
 	static Shader* shader;
 	static ShadowMapping* shadow;
 	static unsigned int totalVoxels;

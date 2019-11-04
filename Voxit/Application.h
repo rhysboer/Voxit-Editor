@@ -34,12 +34,9 @@ public:
 private:
 	void OnStart();
 
-	VoxelBuilder voxelBuilder = VoxelBuilder();
-
-	Shader* shader = nullptr;
-
-	Shader* gridShader = nullptr;
-
+	VoxelBuilder* voxelBuilder = nullptr;
+	//Shader* shader = nullptr;
+	//Shader* gridShader = nullptr;
 	Camera* camera = nullptr;
 };
 

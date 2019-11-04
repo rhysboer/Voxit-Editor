@@ -24,7 +24,7 @@
 
 #include "World.h"
 #include "ShadowMapping.h"
-
+#include "Renderer.h"
 
 struct HistoryNode {
 	enum class UndoType { ADD, REMOVE };
@@ -38,7 +38,7 @@ public:
 	~VoxelBuilder();
 
 	void OnUpdate();
-	void OnDraw(Camera* camera);
+	void Render(Camera* camera);
 
 	static glm::vec3 ConvertPosToClosestMapPos(glm::vec3 pos);	// Converts position to a position in the grid
 	static glm::vec3 ClosestPosInsideMap(glm::vec3 pos);		// Converts position to the closest position inside the map
@@ -99,10 +99,13 @@ private:
 	// ICONS
 	bool buttonStates[(unsigned int)ToolIDs::COUNT] = { false };
 
+	// TESTING SHIT
+
 	int offset = 0;
 	int offsetZ = 0;
 	int offsetY = 0;
 
+	glm::mat4 d_rotation = glm::mat4(1.0f);
 	unsigned int VBO, VAO, EBO;
 };
 
@@ -114,9 +117,12 @@ private:
 	- Look for memory leaks
 
 	Tasks:
-	- Change rendering to chunk based meshes [DONE]
+	- Change rendering to chunk based meshes			[DONE]
 	- Finish GUI, (add coordinates, 'file' buttons)
-	- Hotkeys for drawing [DONE]
+	- Hotkeys for drawing			[DONE]
 	- Change Enable Lighting into the W component of the vec4 of the light direction
-
+	- Working Shadow maps
+	- Adjustible Camera Speed
+	- Change shader so it isnt using "Use Program" each time the function is called. Instead just force the user to call it before hand
+	- ShadowMapping: Change _End, add a Clear Depth Buffer and use End to resize the resolution after all the depth buffers have been drawn too
 */
