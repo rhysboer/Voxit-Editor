@@ -91,22 +91,23 @@ std::vector<glm::vec3> Camera::FrustumPoints() {
 	
 	std::vector<glm::vec3> points = {
 		// NEAR
-		glm::vec3(-1.0f, 1.0f,-1.0f), // TOP LEFT
-		glm::vec3( 1.0f, 1.0f,-1.0f), // TOP RIGHT
-		glm::vec3(-1.0f,-1.0f,-1.0f), // BOT LEFT
-		glm::vec3( 1.0f,-1.0f,-1.0f), // BOT RIGHT
+		glm::vec3(-1.0f, 1.0f,-1.0f), // TOP LEFT	  z = -1.0
+		glm::vec3( 1.0f, 1.0f,-1.0f), // TOP RIGHT	  z = -1.0
+		glm::vec3( 1.0f,-1.0f,-1.0f), // BOT LEFT	  z = -1.0
+		glm::vec3(-1.0f,-1.0f,-1.0f), // BOT RIGHT	  z = -1.0
 
 		// FAR
 		glm::vec3(-1.0f, 1.0f, 1.0f), // TOP LEFT
 		glm::vec3( 1.0f, 1.0f, 1.0f), // TOP RIGHT
-		glm::vec3(-1.0f,-1.0f, 1.0f), // BOT LEFT
-		glm::vec3( 1.0f,-1.0f, 1.0f)  // BOT RIGHT
+		glm::vec3( 1.0f,-1.0f, 1.0f), // BOT LEFT
+		glm::vec3(-1.0f,-1.0f, 1.0f)  // BOT RIGHT
 	};
 
 	glm::vec4 temp;
 	for(int i = 0; i < 8; i++) {
 		temp = inverseProjectionView * glm::vec4(points[i], 1.0f);
-		points[i] = glm::vec3(temp) / temp.w;
+		points[i] = glm::vec3(temp / temp.w);
+		//points[i] = inverseProjectionView * glm::vec4(points[i], 1.0f);
 	}
 
 	return points;

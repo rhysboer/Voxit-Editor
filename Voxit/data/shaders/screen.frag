@@ -10,6 +10,7 @@ uniform sampler2D depthMap_zro;
 uniform sampler2D depthMap_one;
 uniform sampler2D depthMap_two;
 
+
 void main() 
 { 
 	float depth = 1;

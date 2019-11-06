@@ -6,7 +6,7 @@ layout (location = 1) in vec2 aTex; // TEXTURE COORDINATES
 layout (location = 2) in vec3 aNom; // NORMALS
 layout (location = 3) in vec3 aCol; // COLOUR
 
-const int CASCADE_NUM = 3; // Total amount of cascades
+const int CASCADE_NUM = 4; // Total amount of cascades
 
 struct Light{
 	float cascadeSplits[CASCADE_NUM]; 	// Splits between cascades
@@ -25,7 +25,6 @@ uniform vec3 _pos;          // POSITION
 uniform mat4 _view;			// WORLD
 uniform mat4 _projection;	// CAMERA
 
-
 // DATA OUT
 out vec2 texCoord;
 out vec3 colour;
@@ -40,7 +39,6 @@ out float clipSpaceZ;
 
 // SETTINGS OUT
 out float showOutline;
-
 
 void main()
 {
@@ -58,13 +56,10 @@ void main()
 	sunDirection = _lightData.lightDirection;
 	showOutline = _showOutline;
 
-	fragLightSpace[0] = _lightData.lightMatrix[0] * vec4(fragPos, 1.0f);
-	fragLightSpace[1] = _lightData.lightMatrix[1] * vec4(fragPos, 1.0f);
-	fragLightSpace[2] = _lightData.lightMatrix[2] * vec4(fragPos, 1.0f);
-	
-	cascadeSize[0] = _lightData.cascadeSplits[0];
-	cascadeSize[1] = _lightData.cascadeSplits[1];
-	cascadeSize[2] = _lightData.cascadeSplits[2];
+	for(int i = 0; i < CASCADE_NUM; i++){
+		fragLightSpace[i] = _lightData.lightMatrix[i] * vec4(fragPos, 1.0f);
+		cascadeSize[i] = _lightData.cascadeSplits[i];
+	}
 	
 	// Vertice Position
 	gl_Position =  _projection * _view * model * vec4(aVer, 1.0f);

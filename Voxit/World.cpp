@@ -31,6 +31,7 @@ void World::InitWorld() {
 	shader->SetTextureUnit("shadowMap[0]", 0);
 	shader->SetTextureUnit("shadowMap[1]", 1);
 	shader->SetTextureUnit("shadowMap[2]", 2);
+	shader->SetTextureUnit("shadowMap[3]", 3);
 }
 
 void World::DestroyWorld() {
@@ -166,14 +167,14 @@ void World::Draw() {
 	shader->SetMatrix4("_lightData.lightMatrix[0]", shadow->GetDepthPV(0));
 	shader->SetMatrix4("_lightData.lightMatrix[1]", shadow->GetDepthPV(1));
 	shader->SetMatrix4("_lightData.lightMatrix[2]", shadow->GetDepthPV(2));
+	shader->SetMatrix4("_lightData.lightMatrix[3]", shadow->GetDepthPV(3));
 	shader->SetVector4("_lightData.lightDirection", glm::vec4(Settings::sunDirection, (float)Settings::useLighting));
 
 	// Set Cascade Split Lengths
 	shader->SetFloat("_lightData.cascadeSplits[0]", shadow->GetCascadeSplit(0));
 	shader->SetFloat("_lightData.cascadeSplits[1]", shadow->GetCascadeSplit(1));
 	shader->SetFloat("_lightData.cascadeSplits[2]", shadow->GetCascadeSplit(2));
-
-	printf("x)%f, y)%f, z)%f, w)%f\n", Settings::sunDirection.x, Settings::sunDirection.y, Settings::sunDirection.z, (float)Settings::useLighting);
+	shader->SetFloat("_lightData.cascadeSplits[3]", shadow->GetCascadeSplit(3));
 
 	// Settings
 	shader->SetFloat("_showOutline", (float)Settings::useVoxelOutline);
