@@ -99,7 +99,7 @@ RaycastHit Raycaster::VoxelDetection(std::map<int, Voxel>* voxels) {
 	return RaycastHit(false, VoxelBuilder::ConvertPosToClosestMapPos(endPoint), nullptr);
 }
 
-RaycastHit Raycaster::TEST_VoxelDetection() {
+RaycastHit Raycaster::TEST_VoxelDetection(World& world) {
 	glm::vec2 mousePos = Input::MousePosition();
 	glm::vec2 screenSize = Window::GetSize();
 
@@ -175,7 +175,7 @@ RaycastHit Raycaster::TEST_VoxelDetection() {
 			}
 		}
 
-		Voxel* vox = World::GetVoxel(glm::round(pos));
+		Voxel* vox = world.GetVoxel(glm::round(pos));
 		if(vox != nullptr) {
 			return RaycastHit(true, positions.back(), vox);
 		}

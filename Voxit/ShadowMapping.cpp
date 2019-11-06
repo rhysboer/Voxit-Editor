@@ -2,9 +2,6 @@
 
 ShadowMapping::ShadowMapping(unsigned int shadowResolution) {
 	this->shadowResolution = shadowResolution;
-	//this->depthMap = 0;// [CASCADE_AMOUNT] = { 0 };
-	//this->FBO = 0;// [CASCADE_AMOUNT] = { 0 };
-	//this->position = glm::vec3(-10.0f, 10.0f, 0.0f); // REMOVE
 
 	for(int i = 0; i < CASCADE_AMOUNT; i++) {
 		this->depthProjectionView.push_back(glm::mat4(0.0f));
@@ -12,12 +9,12 @@ ShadowMapping::ShadowMapping(unsigned int shadowResolution) {
 	}
 
 	// Distance between each cascade
-	cascadeDistances.push_back(0.10f * 1.0f);	// 0.05f
-	cascadeDistances.push_back(0.25f * 1.0f);	// 0.05f
-	cascadeDistances.push_back(0.50f * 1.0f);	// 0.15f
-	cascadeDistances.push_back(1.00f * 1.0f);	// 0.50f
+	cascadeDistances.push_back(0.10f * 1.0f);
+	cascadeDistances.push_back(0.25f * 1.0f);
+	cascadeDistances.push_back(0.50f * 1.0f);
+	cascadeDistances.push_back(1.00f * 1.0f);
 
-	this->shader = ShaderManager::GetShader("depth");
+	this->depthShader = ShaderManager::GetShader("depth");
 
 	InitDepthBuffer();
 }
@@ -50,17 +47,17 @@ void ShadowMapping::InitDepthBuffer() {
 	}
 }
 
-void ShadowMapping::FrameBuffer_Start(int index) {
+void ShadowMapping::FrameBuffer_Start(const int& index) {
 	glViewport(0, 0, shadowResolution, shadowResolution);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO[index]);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_CLAMP);
 
 	SetShadowMapProjectionView(index);
-	shader->SetMatrix4("_lightMatrix", depthProjectionView[index]);
+	depthShader->SetMatrix4("_lightMatrix", depthProjectionView[index]);
 }
 
-void ShadowMapping::FrameBuffer_End(int index) {
+void ShadowMapping::FrameBuffer_End() {
 	glm::vec2 size = Window::GetSize();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -69,11 +66,24 @@ void ShadowMapping::FrameBuffer_End(int index) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void ShadowMapping::ClearBuffer() const {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
 float ShadowMapping::GetCascadeSplit(const int& index) const {
 	return splits[index];
 }
 
-void ShadowMapping::BindDepthTextures() {
+glm::mat4 ShadowMapping::GetShadowProjectionView(const int& index) const {
+	return depthProjectionView[index];
+}
+
+Shader* ShadowMapping::GetDepthShader() const {
+	return depthShader;
+}
+
+void ShadowMapping::BindDepthTextures() const {
 	for(int i = 0; i < CASCADE_AMOUNT; i++) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, depthMap[i]);
@@ -83,13 +93,7 @@ void ShadowMapping::BindDepthTextures() {
 void ShadowMapping::SetShadowMapProjectionView(const int& index) {
 	if(index > CASCADE_AMOUNT) return;
 
-
-	//Camera::ActiveCamera->SetFar(150.0f);
-
 	std::vector<glm::vec3> frustumPoints = Camera::ActiveCamera->GetFrustum()->points;
-	//glm::vec3 frustumCenter = Camera::ActiveCamera->GetFrustum()->center;
-
-	//Camera::ActiveCamera->SetFar(150.0f);
 
 	float prevSplitDist = (index == 0) ? minCascadeDistance : cascadeDistances[index - 1];
 	float splitDist = cascadeDistances[index];
@@ -109,7 +113,6 @@ void ShadowMapping::SetShadowMapProjectionView(const int& index) {
 		center += frustumPoints[i];
 	center /= 8.0f;
 
-	glm::vec3 upDir = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 minExtents;
 	glm::vec3 maxExtents;
 
@@ -132,10 +135,9 @@ void ShadowMapping::SetShadowMapProjectionView(const int& index) {
 	// Get the position of the shadow camera
 	glm::vec3 shadowCamPos = (center + Settings::sunDirection * -minExtents.z);
 
-
 	// Come up with a new ortho Camera for the shadow caster
 	glm::mat4 shadowCamProj = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, cascadeExtents.z);
-	glm::mat4 shadowCamView = glm::lookAt(shadowCamPos, center, upDir);
+	glm::mat4 shadowCamView = glm::lookAt(shadowCamPos, center, glm::vec3(0.0f, 1.0f, 0.0f));
 
 	// STABILIZE CASCADE
 	glm::mat4 shadowMatrix = shadowCamProj * shadowCamView;
@@ -143,16 +145,12 @@ void ShadowMapping::SetShadowMapProjectionView(const int& index) {
 	shadowOrigin = shadowMatrix * shadowOrigin;
 	shadowOrigin = shadowOrigin * (shadowResolution / 2.0f);
 
-	glm::vec4 roundedOrigin = glm::round(shadowOrigin);
-	glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
+	glm::vec4 roundOffset = glm::round(shadowOrigin) - shadowOrigin;
 	roundOffset = roundOffset * 2.0f / (float)shadowResolution;
 	roundOffset.z = 0.0f;
 	roundOffset.w = 0.0f;
 
-	// Fix this
-	glm::mat4 shadowProj = shadowCamProj;// *shadowCamView;
-	shadowProj[3] += roundOffset;
-	shadowCamProj = shadowProj; // MAYBE???
+	shadowCamProj[3] += roundOffset;
 
 	depthProjectionView[index] = (shadowCamProj * shadowCamView);
 }

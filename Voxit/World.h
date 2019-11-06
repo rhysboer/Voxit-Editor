@@ -9,45 +9,43 @@
 
 class World {
 public:
-	static void InitWorld();
-	static void DestroyWorld();
+	World() {};
+	~World() {};
 
-	static void AddBlocks(const std::vector<Voxel>& voxels);
-	static void RemoveBlocks(const std::vector<Voxel>& voxels);
+	void InitWorld();
+	void DestroyWorld();
 
-	static void Draw();
-	static void DrawShadow();
+	void AddBlocks(const std::vector<Voxel>& voxels);
+	void RemoveBlocks(const std::vector<Voxel>& voxels);
 
-	static ShadowMapping* GetSHADOW() {
-		return shadow;
-	}
+	void Render();
+	void RenderDepthMap();
 
 	// Return voxels chunk
-	static Chunk* const GetVoxelChunk(const glm::ivec3& voxelPos); // Returns chunk the voxel position is in, nullptr if out of bounds
-	static Chunk* const GetChunk(const glm::ivec3 chunkIndex);	// Returns chunk from chunk index, nullptr if out of bounds 
+	Chunk* const GetVoxelChunk(const glm::ivec3& voxelPos); // Returns chunk the voxel position is in, nullptr if out of bounds
+	Chunk* const GetChunk(const glm::ivec3 chunkIndex);	// Returns chunk from chunk index, nullptr if out of bounds 
 
 	// Gets the voxel at the closest position, returns nullptr if no voxel exists or out of bounds
-	static Voxel* GetVoxel(const glm::ivec3& position);
-	static bool HasNeighbour(const Voxel& voxel, Chunk::Direction direction);
+	Voxel* GetVoxel(const glm::ivec3& position);
+	bool HasNeighbour(const Voxel& voxel, Chunk::Direction direction);
 
 	// Removes voxel from world, returning the pointer to it. MUST BE DELETED
-	static Voxel* GetAndRemoveVoxel(const glm::ivec3& position);
+	Voxel* GetAndRemoveVoxel(const glm::ivec3& position);
 
-	static int TotalBlocks();
+	// Returns total voxels
+	int TotalVoxels();
 
-	static void GetAllVoxels(std::vector<Voxel*>& voxels);
+	void GetAllVoxels(std::vector<Voxel*>& voxels);
 
+	const static int WORLD_SIZE = 5;
 private:
 
-
-	static glm::ivec3 GetChunkIndex(glm::vec3 voxelPos);
+	glm::ivec3 GetChunkIndex(glm::vec3 voxelPos);
 
 	// World Voxel Shader
-	static Shader* shader;
-	static ShadowMapping* shadow;
-	static unsigned int totalVoxels;
+	Shader* voxelShader;
+	ShadowMapping* shadow;
+	unsigned int totalVoxels;
 
-
-	const static int worldSize = 5;
-	static Chunk* chunks[worldSize][worldSize][worldSize]; 
+	Chunk* chunks[WORLD_SIZE][WORLD_SIZE][WORLD_SIZE]; 
 };

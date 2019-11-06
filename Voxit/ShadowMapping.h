@@ -13,12 +13,14 @@ public:
 	ShadowMapping(unsigned int shadowResolution);
 	~ShadowMapping();
 
-	void FrameBuffer_Start(int index = 0);
-	void FrameBuffer_End(int index = 0);
+	void FrameBuffer_Start(const int& index = 0);
+	void FrameBuffer_End();
+	void ClearBuffer() const;
+	void BindDepthTextures() const;
 	
 	float GetCascadeSplit(const int& index) const;
-
-	void BindDepthTextures();
+	glm::mat4 GetShadowProjectionView(const int& index) const;
+	Shader* GetDepthShader() const;
 
 	static const unsigned int CASCADE_AMOUNT = 4;
 private:

@@ -30,5 +30,5 @@ namespace Raycaster {
 	// Returns a RaycastHit
 	RaycastHit VoxelDetection(std::map<int, Voxel>* voxels);
 
-	RaycastHit TEST_VoxelDetection();
+	RaycastHit TEST_VoxelDetection(World& world);
 }

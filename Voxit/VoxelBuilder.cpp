@@ -4,6 +4,7 @@
 VoxelBuilder::VoxelBuilder() : history(historySize) {
 	this->grid = Grid(mapSize + 1);
 	this->fileHandler = FileHandler();
+	this->world = new World();
 
 	// Selector
 	this->selector = Selector();
@@ -17,41 +18,7 @@ VoxelBuilder::VoxelBuilder() : history(historySize) {
 	this->voxelColour = glm::vec3(1.0f);
 	this->voxelColourSecondary = glm::vec3::vec(0.5f);
 
-	World::InitWorld();
-
-	float vertices[] = {
-		// positions          // colors           // texture coords
-		 -0.6f, -0.6f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-		 -0.6f, -1.0f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-		-1.0f, -1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-		-1.0f,  -0.6f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
-	};
-	unsigned int indices[] = {
-		0, 3, 1, // first triangle
-		2, 1, 3  // second triangle
-	};
-
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	// color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	// texture coord attribute
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	world->InitWorld();
 }
 
 VoxelBuilder::~VoxelBuilder() {
@@ -95,13 +62,13 @@ void VoxelBuilder::OnUpdate() {
 			switch((*history.GetNewest()).type) {
 				case HistoryNode::UndoType::ADD:
 				{
-					World::RemoveBlocks((*history.GetNewest()).voxels);
+					world->RemoveBlocks((*history.GetNewest()).voxels);
 					history.Pop_Newest();
 					break;
 				}
 				case HistoryNode::UndoType::REMOVE:
 				{
-					World::AddBlocks((*history.GetNewest()).voxels);
+					world->AddBlocks((*history.GetNewest()).voxels);
 					history.Pop_Newest();
 
 					break;
@@ -113,27 +80,15 @@ void VoxelBuilder::OnUpdate() {
 
 void VoxelBuilder::Render(Camera* camera) {
 	// DRAW DEPTH MAP
-	World::DrawShadow();
+	world->RenderDepthMap();
 
+	// Render Grid
 	grid.OnDraw(camera);
-	World::Draw();
-	
-	// DRAW SCENE
-	World::GetSHADOW()->BindDepthTextures();
-	Shader* shader = ShaderManager::GetShader("screen");
-	for(int i = 0; i < 3; i++) {
-		shader->SetVector3("position", glm::vec3(0.41f * i, 0, 0));
-		shader->SetFloat("depthIndex", i);
-		shader->SetTextureUnit("depthMap_zro", 0);
-		shader->SetTextureUnit("depthMap_one", 1);
-		shader->SetTextureUnit("depthMap_two", 2);
-		
-		shader->UseProgram();
-		
-		glBindVertexArray(VAO);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	}
 
+	// Render World
+	world->Render();
+
+	// Render selector/highlighter
 	selector.OnDraw(camera);
 }
 
@@ -143,7 +98,7 @@ void VoxelBuilder::ToolPlace() {
 	if(Input::IsMouseKeyDown(GLFW_MOUSE_BUTTON_LEFT)) {
 		if(this->isSelecting == false) {
 
-			RaycastHit hit = Raycaster::TEST_VoxelDetection();
+			RaycastHit hit = Raycaster::TEST_VoxelDetection(*world);
 
 			if(IsValidMapPos(hit.position)) {
 				selector.SetActive(true);
@@ -152,7 +107,7 @@ void VoxelBuilder::ToolPlace() {
 			}
 		}
 
-		RaycastHit hit = Raycaster::TEST_VoxelDetection();// (&voxelMap);
+		RaycastHit hit = Raycaster::TEST_VoxelDetection(*world);// (&voxelMap);
 
 		if(IsValidMapPos(hit.position)) {
 			selector.SetEnd(hit.position);
@@ -180,7 +135,7 @@ void VoxelBuilder::ToolPlace() {
 					for(int x = 0; x < dist.x; x++, index++) {
 						position = start + (glm::vec3(x, y, z) * offset);
 			
-						if(IsValidMapPos(position) && World::GetVoxel(position) == nullptr) {
+						if(IsValidMapPos(position) && world->GetVoxel(position) == nullptr) {
 							Voxel voxel = Voxel();
 							voxel.colour = (Input::IsKeyDown(GLFW_KEY_LEFT_SHIFT)) ? voxelColourSecondary : voxelColour;
 							voxel.position = position;
@@ -190,7 +145,7 @@ void VoxelBuilder::ToolPlace() {
 				}
 			}
 
-			World::AddBlocks(voxels);
+			world->AddBlocks(voxels);
 			AddToHistory(voxels, HistoryNode::UndoType::ADD);
 		}
 
@@ -201,7 +156,7 @@ void VoxelBuilder::ToolPlace() {
 
 void VoxelBuilder::ToolEyedropper() {
 	if(Input::IsMouseKeyDown(GLFW_MOUSE_BUTTON_LEFT)) {
-		RaycastHit hit = Raycaster::TEST_VoxelDetection();
+		RaycastHit hit = Raycaster::TEST_VoxelDetection(*world);
 
 		if(hit.hitObject == true) {
 			selector.SetActive(true);
@@ -215,7 +170,7 @@ void VoxelBuilder::ToolEyedropper() {
 		if(isSelecting == true) {
 
 			if(IsValidMapPos(selector.GetStart())) {
-				Voxel* voxel = World::GetVoxel(selector.GetStart());
+				Voxel* voxel = world->GetVoxel(selector.GetStart());
 
 				if(voxel != nullptr) {
 					if(Input::IsKeyDown(GLFW_KEY_LEFT_SHIFT)) {
@@ -234,7 +189,7 @@ void VoxelBuilder::ToolEyedropper() {
 
 void VoxelBuilder::ToolEraser() {
 	if(Input::IsMouseKeyDown(GLFW_MOUSE_BUTTON_LEFT)) {
-		RaycastHit hit = Raycaster::TEST_VoxelDetection();
+		RaycastHit hit = Raycaster::TEST_VoxelDetection(*world);
 
 		if(this->isSelecting == false) {
 			isSelecting = true;
@@ -277,7 +232,7 @@ void VoxelBuilder::ToolEraser() {
 				for(int y = 0; y < dist.y; y++) {
 					for(int z = 0; z < dist.z; z++) {
 						for(int x = 0; x < dist.x; x++, index++) {
-							Voxel* voxel = World::GetAndRemoveVoxel(start + (glm::vec3(x, y, z) * offset));
+							Voxel* voxel = world->GetAndRemoveVoxel(start + (glm::vec3(x, y, z) * offset));
 
 							if(voxel != nullptr) {
 								deletedVoxels.push_back(Voxel(*voxel));
@@ -300,7 +255,7 @@ void VoxelBuilder::ToolGradient() {
 	if(Input::IsMouseKeyDown(GLFW_MOUSE_BUTTON_LEFT)) {
 		if(this->isSelecting == false) {
 
-			RaycastHit hit = Raycaster::TEST_VoxelDetection();
+			RaycastHit hit = Raycaster::TEST_VoxelDetection(*world);
 
 			if(IsValidMapPos(hit.position)) {
 				selector.SetActive(true);
@@ -309,7 +264,7 @@ void VoxelBuilder::ToolGradient() {
 			}
 		}
 
-		RaycastHit hit = Raycaster::TEST_VoxelDetection();
+		RaycastHit hit = Raycaster::TEST_VoxelDetection(*world);
 
 		if(IsValidMapPos(hit.position)) {
 			selector.SetEnd(hit.position);
@@ -338,7 +293,7 @@ void VoxelBuilder::ToolGradient() {
 					for(int x = 0; x < dist.x; x++, index++) {
 						position = start + (glm::vec3(x, y, z) * offset);
 
-						if(IsValidMapPos(position) && World::GetVoxel(position) == nullptr) {
+						if(IsValidMapPos(position) && world->GetVoxel(position) == nullptr) {
 							float distance = glm::distance(start + glm::vec3(x, y, z) * offset, selector.GetEnd()) / max;
 
 							Voxel voxel = Voxel();
@@ -350,7 +305,7 @@ void VoxelBuilder::ToolGradient() {
 				}
 			}
 
-			World::AddBlocks(voxels);
+			world->AddBlocks(voxels);
 			AddToHistory(voxels, HistoryNode::UndoType::ADD);
 		}
 
@@ -363,7 +318,7 @@ void VoxelBuilder::ToolGradient() {
 
 void VoxelBuilder::DrawGUI() {
 	// Windows
-	fileHandler.ShowOpenWindow();
+	fileHandler.ShowOpenWindow(*world);
 
 	if(ImGui::BeginMainMenuBar(), ImGuiWindowFlags_NoBringToFrontOnFocus) {
 		if(ImGui::BeginMenu("Menu")) {
@@ -576,7 +531,7 @@ void VoxelBuilder::DrawGUI() {
 
 	ImGui::Text("\tStatistics");
 	ImGui::Text("FPS: %.1f", 1.0f / Time::DeltaTime());
-	ImGui::Text("Total Voxels: %i", World::TotalBlocks());
+	ImGui::Text("Total Voxels: %i", world->TotalVoxels());
 	ImGui::Text("Camera Pos: %.1f, %.1f, %.1f", cameraPos.x, cameraPos.y, cameraPos.z);
 
 	glm::vec3 distance = selector.GetDistance();
@@ -585,26 +540,6 @@ void VoxelBuilder::DrawGUI() {
 	ImGui::Text("Start Pos: %.1f, %.1f, %.1f", selector.GetStart().x, selector.GetStart().y, selector.GetStart().z);
 	ImGui::Text("End Pos: %.1f, %.1f, %.1f", selector.GetEnd().x, selector.GetEnd().y, selector.GetEnd().z);
 	ImGui::Text("Size: %.1f, %.1f, %.1f", distance.x, distance.y, distance.z);
-
-
-	//d_rotation = glm::rotate(d_rotation, 1.0f * Time::DeltaTime(), glm::vec3(1, 0, 0));
-
-	//Settings::sunMatrix = glm::rotate(Settings::sunMatrix, Time::DeltaTime(), glm::vec3(0, 1, 0));
-
-	glm::vec3 d_forward = glm::vec3(d_rotation[2]);
-	glm::vec3 d_up = glm::vec3(d_rotation[1]);
-
-	glm::vec3 d_right = glm::cross(d_forward, d_up);
-
-	Renderer::Clear();
-	Renderer::AddLine(glm::vec3(0.0f, 5.0f, 0.0f), d_forward	+ glm::vec3(0, 5, 0), glm::vec3(0, 0, 1)); // FORWARD
-	Renderer::AddLine(glm::vec3(0.0f, 5.0f, 0.0f), d_up			+ glm::vec3(0, 5, 0), glm::vec3(0, 1, 0)); // FORWARD
-	Renderer::AddLine(glm::vec3(0.0f, 5.0f, 0.0f), d_right		+ glm::vec3(0, 5, 0), glm::vec3(1, 0, 0));
-	
-	
-	ImGui::Text("FORWARD: %.2f, %.2f, %.2f", d_forward.x, d_forward.y, d_forward.z);
-	ImGui::Text("UP: %.2f, %.2f, %.2f", d_up.x, d_up.y, d_up.z);
-	ImGui::Text("RIGHT: %.2f, %.2f, %.2f", d_right.x, d_right.y, d_right.z);
 
 	ImGui::End();
 
@@ -619,7 +554,6 @@ void VoxelBuilder::DrawGUI() {
 		ImGui::End();
 		ImGui::PopStyleColor(1);
 	}
-
 }
 
 void VoxelBuilder::ClearAndSetButtonState(ToolIDs set) {

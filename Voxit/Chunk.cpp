@@ -1,7 +1,8 @@
 #include "Chunk.h"
 #include "World.h"
 
-Chunk::Chunk(glm::vec3 pos, glm::ivec3 index) {
+Chunk::Chunk(World* world, glm::vec3 pos, glm::ivec3 index) {
+	this->world = world;
 	worldPosition = pos;
 	worldIndex = index;
 	Init(pos);
@@ -232,6 +233,26 @@ Voxel* Chunk::RemoveVoxel(const glm::vec3& pos) {
 	return voxel;
 }
 
+void Chunk::ClearChunk() {
+	bool hasRemovedVoxels = false;
+	for(int y = 0; y < size; y++) {
+		for(int z = 0; z < size; z++) {
+			for(int x = 0; x < size; x++) {
+				Voxel* vox = this->voxels[x][y][z];
+				if(vox) {
+					delete vox;
+					voxels[x][y][z] = nullptr;
+
+					hasRemovedVoxels = true;
+				}
+			}
+		}
+	}
+
+	if(hasRemovedVoxels)
+		isDirty = true;
+}
+
 Voxel* Chunk::GetVoxel(glm::vec3 position) const {
 	glm::ivec3 index = WorldPosToIndex(position);
 	if(index.x < 0 || index.x >= size || index.y < 0 || index.y >= size|| index.z < 0 || index.z >= size)
@@ -239,7 +260,7 @@ Voxel* Chunk::GetVoxel(glm::vec3 position) const {
 	return voxels[index.x][index.y][index.z];
 }
 
-void Chunk::GetVoxels(std::vector<Voxel*>& voxels) const {
+void Chunk::GetAllVoxelsInChunk(std::vector<Voxel*>& voxels) const {
 	for(int y = 0; y < size; y++) {
 		for(int z = 0; z < size; z++) {
 			for(int x = 0; x < size; x++) {
@@ -266,7 +287,7 @@ glm::ivec3 Chunk::DirectionToVec(const Chunk::Direction& dire) const {
 
 bool Chunk::HasNeighbour(glm::vec3 pos, Chunk::Direction direction) const {
 	glm::vec3 dire = DirectionToVec(direction);
-	Chunk* const chunk = World::GetVoxelChunk(pos + dire);
+	Chunk* const chunk = world->GetVoxelChunk(pos + dire);
 	if(!chunk) return false;
 
 	if(chunk->GetVoxel(pos + dire))

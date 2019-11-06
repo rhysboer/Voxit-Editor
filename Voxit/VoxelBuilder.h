@@ -78,6 +78,7 @@ private:
 	static const int mapSize = 75;
 	const unsigned int historySize = 20;
 
+	World* world;
 	Selector selector;
 	Grid grid;
 
@@ -98,15 +99,6 @@ private:
 
 	// ICONS
 	bool buttonStates[(unsigned int)ToolIDs::COUNT] = { false };
-
-	// TESTING SHIT
-
-	int offset = 0;
-	int offsetZ = 0;
-	int offsetY = 0;
-
-	glm::mat4 d_rotation = glm::mat4(1.0f);
-	unsigned int VBO, VAO, EBO;
 };
 
 

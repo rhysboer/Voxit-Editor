@@ -14,10 +14,10 @@ namespace Data {
 		ERROR_CORRUPTED
 	};
 
-	bool SaveVoxelData(const char* filePath);
-	Handler LoadVoxelData(const char* filePath);
+	bool SaveVoxelData(World& world, const char* filePath);
+	Handler LoadVoxelData(World& world, const char* filePath);
 
-	Handler VoxelExport(const char* filePath);
+	Handler VoxelExport(World& world, const char* filePath);
 }
 
 class COLLADACompiler {
@@ -25,7 +25,7 @@ public:
 	COLLADACompiler();
 	~COLLADACompiler() {}
 
-	void CompileWorldData(); // const std::map<int, Voxel>& data
+	void CompileWorldData(World& world); // const std::map<int, Voxel>& data
 
 	// Compile file and export it
 	bool Compile(const char* path);

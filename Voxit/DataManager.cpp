@@ -3,7 +3,7 @@
 
 #define	FILEHEADER "VXT.File"
 
-bool Data::SaveVoxelData(const char* filePath) {
+bool Data::SaveVoxelData(World& world, const char* filePath) {
 	std::ofstream file(filePath, std::ios::out | std::ios::binary | std::ios::trunc);
 	if(!file.is_open())
 		return false;
@@ -14,7 +14,7 @@ bool Data::SaveVoxelData(const char* filePath) {
 	glm::vec3 col, pos;
 
 	std::vector<Voxel*> voxels = std::vector<Voxel*>();
-	World::GetAllVoxels(voxels);
+	world.GetAllVoxels(voxels);
 
 	for(auto const& voxel : voxels) {
 		col = voxel->colour;
@@ -36,7 +36,7 @@ bool Data::SaveVoxelData(const char* filePath) {
 	return true;
 }
 
-Data::Handler Data::LoadVoxelData(const char* filePath) {
+Data::Handler Data::LoadVoxelData(World& world, const char* filePath) {
 	std::ifstream file(filePath, std::ios::in | std::ios::binary);
 	if(!file.is_open())
 		return Data::ERROR_NO_FILE;
@@ -76,17 +76,18 @@ Data::Handler Data::LoadVoxelData(const char* filePath) {
 		voxels.push_back(voxel);
 	}
 
-	World::AddBlocks(voxels);
+	world.DestroyWorld();
+	world.AddBlocks(voxels);
 
 	delete[] header;
 	delete[] buffer;
 	return Data::SUCCESS;
 }
 
-Data::Handler Data::VoxelExport(const char* filePath) {
+Data::Handler Data::VoxelExport(World& world, const char* filePath) {
 	COLLADACompiler out = COLLADACompiler();
 
-	out.CompileWorldData();
+	out.CompileWorldData(world);
 	bool successful = out.Compile(filePath);
 
 	if(successful)
@@ -108,23 +109,23 @@ COLLADACompiler::COLLADACompiler() {
 	this->usedColours = std::vector<glm::vec3>();
 }
 
-void COLLADACompiler::CompileWorldData() { // const std::map<int, Voxel>& data
+void COLLADACompiler::CompileWorldData(World& world) { // const std::map<int, Voxel>& data
 	std::vector<Voxel*> voxels = std::vector<Voxel*>();
 	bool left = false, front = false, right = false, back = false, up = false, down = false;
 	glm::vec3 pos;
 
-	World::GetAllVoxels(voxels);
+	world.GetAllVoxels(voxels);
 
 	for(auto const& voxel : voxels) {
 		pos = voxel->position;
 
 		// Find neighbouring voxels
-		right	= (World::HasNeighbour(*voxel, Chunk::Direction::EAST));
-		left	= (World::HasNeighbour(*voxel, Chunk::Direction::WEST));
-		up		= (World::HasNeighbour(*voxel, Chunk::Direction::UP));
-		down	= (World::HasNeighbour(*voxel, Chunk::Direction::DOWN));
-		front	= (World::HasNeighbour(*voxel, Chunk::Direction::SOUTH));
-		back	= (World::HasNeighbour(*voxel, Chunk::Direction::NORTH));
+		right	= (world.HasNeighbour(*voxel, Chunk::Direction::EAST));
+		left	= (world.HasNeighbour(*voxel, Chunk::Direction::WEST));
+		up		= (world.HasNeighbour(*voxel, Chunk::Direction::UP));
+		down	= (world.HasNeighbour(*voxel, Chunk::Direction::DOWN));
+		front	= (world.HasNeighbour(*voxel, Chunk::Direction::SOUTH));
+		back	= (world.HasNeighbour(*voxel, Chunk::Direction::NORTH));
 
 		// Reverse X & Z
 		pos.x = -pos.x;
@@ -227,25 +228,28 @@ void COLLADACompiler::CalculateIndex(const int& colourIndex, const int& normal) 
 	int offset = total * verticesPerFace;
 	total += 1;
 
-	triangles.append(std::to_string(0 + offset));
-	triangles.append(" " + std::to_string(normal) + " ");
-	triangles.append(std::to_string(colourIndex) + " ");
-	triangles.append(std::to_string(1 + offset));
-	triangles.append(" " + std::to_string(normal) + " ");
-	triangles.append(std::to_string(colourIndex) + " ");
-	triangles.append(std::to_string(2 + offset));
-	triangles.append(" " + std::to_string(normal) + " ");
-	triangles.append(std::to_string(colourIndex) + " ");
+	std::string c_normal = std::to_string(normal);
+	std::string c_color = std::to_string(colourIndex);
 
 	triangles.append(std::to_string(0 + offset));
-	triangles.append(" " + std::to_string(normal) + " ");
-	triangles.append(std::to_string(colourIndex) + " ");
+	triangles.append(" " + c_normal + " ");
+	triangles.append(c_color + " ");
+	triangles.append(std::to_string(1 + offset));
+	triangles.append(" " + c_normal + " ");
+	triangles.append(c_color + " ");
 	triangles.append(std::to_string(2 + offset));
-	triangles.append(" " + std::to_string(normal) + " ");
-	triangles.append(std::to_string(colourIndex) + " ");
+	triangles.append(" " + c_normal + " ");
+	triangles.append(c_color + " ");
+
+	triangles.append(std::to_string(0 + offset));
+	triangles.append(" " + c_normal + " ");
+	triangles.append(c_color + " ");
+	triangles.append(std::to_string(2 + offset));
+	triangles.append(" " + c_normal + " ");
+	triangles.append(c_color + " ");
 	triangles.append(std::to_string(3 + offset));
-	triangles.append(" " + std::to_string(normal) + " ");
-	triangles.append(std::to_string(colourIndex) + " ");
+	triangles.append(" " + c_normal + " ");
+	triangles.append(c_color + " ");
 }
 
 bool COLLADACompiler::Compile(const char* path) {

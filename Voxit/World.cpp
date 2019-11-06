@@ -1,41 +1,40 @@
 #include "World.h"
 
-Chunk* World::chunks[5][5][5];
-Shader* World::shader = nullptr;
-ShadowMapping* World::shadow = nullptr;
-unsigned int World::totalVoxels = 0;
-
-
 void World::InitWorld() {
 	// Create Chunks
-	for(int y = 0; y < worldSize; y++) {
-		for(int z = 0; z < worldSize; z++) {
-			for(int x = 0; x < worldSize; x++) {
-				chunks[x][y][z] = new Chunk(glm::vec3(
-					Chunk::size * (x - (worldSize / 2)),
+	for(int y = 0; y < WORLD_SIZE; y++) {
+		for(int z = 0; z < WORLD_SIZE; z++) {
+			for(int x = 0; x < WORLD_SIZE; x++) {
+				chunks[x][y][z] = new Chunk(this, glm::vec3(
+					Chunk::size * (x - (WORLD_SIZE / 2)),
 					Chunk::size * y,
-					Chunk::size * (z - (worldSize / 2))),
+					Chunk::size * (z - (WORLD_SIZE / 2))),
 					glm::ivec3(x, y, z)
 				);
 			}
 		}
 	}
 
-	shader = ShaderManager::GetShader("voxel");
+	voxelShader = ShaderManager::GetShader("voxel");
 	shadow = new ShadowMapping(1024 * 2);
 	totalVoxels = 0;
 
-
-	
 	// Set Texture Unit
-	shader->SetTextureUnit("shadowMap[0]", 0);
-	shader->SetTextureUnit("shadowMap[1]", 1);
-	shader->SetTextureUnit("shadowMap[2]", 2);
-	shader->SetTextureUnit("shadowMap[3]", 3);
+	voxelShader->SetTextureUnit("shadowMap[0]", 0);
+	voxelShader->SetTextureUnit("shadowMap[1]", 1);
+	voxelShader->SetTextureUnit("shadowMap[2]", 2);
+	voxelShader->SetTextureUnit("shadowMap[3]", 3);
 }
 
 void World::DestroyWorld() {
 	// DESTROY EVERYTHING
+	for(int y = 0; y < WORLD_SIZE; y++) {
+		for(int z = 0; z < WORLD_SIZE; z++) {
+			for(int x = 0; x < WORLD_SIZE; x++) {
+				chunks[x][y][z]->ClearChunk();
+			}
+		}
+	}
 }
 
 void World::AddBlocks(const std::vector<Voxel>& voxels) {
@@ -43,7 +42,7 @@ void World::AddBlocks(const std::vector<Voxel>& voxels) {
 		glm::ivec3 chunkIndex = GetChunkIndex(voxels[i].position);
 		
 		// Out of bounds
-		if(chunkIndex.x < 0 || chunkIndex.x >= worldSize || chunkIndex.y < 0 || chunkIndex.y >= worldSize || chunkIndex.z < 0 || chunkIndex.z >= worldSize) {
+		if(chunkIndex.x < 0 || chunkIndex.x >= WORLD_SIZE || chunkIndex.y < 0 || chunkIndex.y >= WORLD_SIZE || chunkIndex.z < 0 || chunkIndex.z >= WORLD_SIZE) {
 			continue;
 		}
 
@@ -59,13 +58,13 @@ void World::AddBlocks(const std::vector<Voxel>& voxels) {
 		}
 		// RIGHT
 		if((int)vox->position.x == chunk->Position().x + (int)Chunk::size / 2) {
-			if(chunkIndex.x + 1 < worldSize) {
+			if(chunkIndex.x + 1 < WORLD_SIZE) {
 				chunks[chunkIndex.x + 1][chunkIndex.y][chunkIndex.z]->SetDirty(true);
 			}
 		}
 		// FORWARD (positive Z)
 		if((int)vox->position.z == chunk->Position().z + (int)Chunk::size / 2) {
-			if(chunkIndex.z + 1 < worldSize) {
+			if(chunkIndex.z + 1 < WORLD_SIZE) {
 				chunks[chunkIndex.x][chunkIndex.y][chunkIndex.z + 1]->SetDirty(true);
 			}
 		}
@@ -77,7 +76,7 @@ void World::AddBlocks(const std::vector<Voxel>& voxels) {
 		}
 		// UP
 		if((int)vox->position.y == chunk->Position().y + (int)Chunk::size / 2) {
-			if(chunkIndex.y + 1 < worldSize) {
+			if(chunkIndex.y + 1 < WORLD_SIZE) {
 				chunks[chunkIndex.x][chunkIndex.y + 1][chunkIndex.z]->SetDirty(true);
 			}
 		}
@@ -92,9 +91,9 @@ void World::AddBlocks(const std::vector<Voxel>& voxels) {
 			++totalVoxels;
 	}
 
-	for(int y = 0; y < worldSize; y++) {
-		for(int z = 0; z < worldSize; z++) {
-			for(int x = 0; x < worldSize; x++) {
+	for(int y = 0; y < WORLD_SIZE; y++) {
+		for(int z = 0; z < WORLD_SIZE; z++) {
+			for(int x = 0; x < WORLD_SIZE; x++) {
 				if(chunks[x][y][z]->IsDirty()) {
 					chunks[x][y][z]->RegenerateMesh();
 					chunks[x][y][z]->SetDirty(false);
@@ -109,7 +108,7 @@ void World::RemoveBlocks(const std::vector<Voxel>& voxels) {
 		glm::ivec3 chunkIndex = GetChunkIndex(voxels[i].position);
 
 		// Out of bounds
-		if(chunkIndex.x < 0 || chunkIndex.x >= worldSize || chunkIndex.y < 0 || chunkIndex.y >= worldSize || chunkIndex.z < 0 || chunkIndex.z >= worldSize) {
+		if(chunkIndex.x < 0 || chunkIndex.x >= WORLD_SIZE || chunkIndex.y < 0 || chunkIndex.y >= WORLD_SIZE || chunkIndex.z < 0 || chunkIndex.z >= WORLD_SIZE) {
 			continue;
 		}
 
@@ -126,13 +125,13 @@ void World::RemoveBlocks(const std::vector<Voxel>& voxels) {
 			}
 			// RIGHT
 			if((int)voxels[i].position.x == chunk->Position().x + (int)Chunk::size / 2) {
-				if(chunkIndex.x + 1 < worldSize) {
+				if(chunkIndex.x + 1 < WORLD_SIZE) {
 					chunks[chunkIndex.x + 1][chunkIndex.y][chunkIndex.z]->SetDirty(true);
 				}
 			}
 			// FORWARD (positive Z)
 			if((int)voxels[i].position.z == chunk->Position().z + (int)Chunk::size / 2) {
-				if(chunkIndex.z + 1 < worldSize) {
+				if(chunkIndex.z + 1 < WORLD_SIZE) {
 					chunks[chunkIndex.x][chunkIndex.y][chunkIndex.z + 1]->SetDirty(true);
 				}
 			}
@@ -144,7 +143,7 @@ void World::RemoveBlocks(const std::vector<Voxel>& voxels) {
 			}
 			// UP
 			if((int)voxels[i].position.y == chunk->Position().y + (int)Chunk::size / 2) {
-				if(chunkIndex.y + 1 < worldSize) {
+				if(chunkIndex.y + 1 < WORLD_SIZE) {
 					chunks[chunkIndex.x][chunkIndex.y + 1][chunkIndex.z]->SetDirty(true);
 				}
 			}
@@ -162,71 +161,77 @@ void World::RemoveBlocks(const std::vector<Voxel>& voxels) {
 	}
 }
 
-void World::Draw() {
-	// Set light matrix
-	shader->SetMatrix4("_lightData.lightMatrix[0]", shadow->GetDepthPV(0));
-	shader->SetMatrix4("_lightData.lightMatrix[1]", shadow->GetDepthPV(1));
-	shader->SetMatrix4("_lightData.lightMatrix[2]", shadow->GetDepthPV(2));
-	shader->SetMatrix4("_lightData.lightMatrix[3]", shadow->GetDepthPV(3));
-	shader->SetVector4("_lightData.lightDirection", glm::vec4(Settings::sunDirection, (float)Settings::useLighting));
+void World::Render() {
+	shadow->BindDepthTextures();
 
-	// Set Cascade Split Lengths
-	shader->SetFloat("_lightData.cascadeSplits[0]", shadow->GetCascadeSplit(0));
-	shader->SetFloat("_lightData.cascadeSplits[1]", shadow->GetCascadeSplit(1));
-	shader->SetFloat("_lightData.cascadeSplits[2]", shadow->GetCascadeSplit(2));
-	shader->SetFloat("_lightData.cascadeSplits[3]", shadow->GetCascadeSplit(3));
+	std::string lightMatrix = "_lightData.lightMatrix[_]";
+	std::string cascadeSplit = "_lightData.cascadeSplits[_]";
+	for(int i = 0; i < shadow->CASCADE_AMOUNT; i++) {
+		std::string c = std::to_string(i);
+
+		lightMatrix.replace(lightMatrix.size() - 2, 1, c);
+		cascadeSplit.replace(cascadeSplit.size() - 2, 1, c);
+
+		// Set light matrix
+		voxelShader->SetMatrix4(lightMatrix.c_str(), shadow->GetShadowProjectionView(i));
+		// Set Cascade Split Lengths
+		voxelShader->SetFloat(cascadeSplit.c_str(), shadow->GetCascadeSplit(i));
+	}
+
+	voxelShader->SetVector4("_lightData.lightDirection", glm::vec4(Settings::sunDirection, (float)Settings::useLighting));
 
 	// Settings
-	shader->SetFloat("_showOutline", (float)Settings::useVoxelOutline);
+	voxelShader->SetFloat("_showOutline", (float)Settings::useVoxelOutline);
 
 	// Set model data
-	shader->SetMatrix4("_view", Camera::ActiveCamera->View());
-	shader->SetMatrix4("_projection", Camera::ActiveCamera->Projection());
+	voxelShader->SetMatrix4("_view", Camera::ActiveCamera->View());
+	voxelShader->SetMatrix4("_projection", Camera::ActiveCamera->Projection());
 
-	for(int x = 0; x < worldSize; x++) {
-		for(int y = 0; y < worldSize; y++) {
-			for(int z = 0; z < worldSize; z++) {
+	for(int x = 0; x < WORLD_SIZE; x++) {
+		for(int y = 0; y < WORLD_SIZE; y++) {
+			for(int z = 0; z < WORLD_SIZE; z++) {
 				Chunk* chunk = chunks[x][y][z];
 				if(chunk != nullptr) {
 					if(chunk->IsDirty()) {
 						chunk->RegenerateMesh();
 					}
 					
-					chunks[x][y][z]->DrawMesh(*shader);
+					chunks[x][y][z]->DrawMesh(*voxelShader);
 				}
 			}
 		}
 	}
 }
 
-void World::DrawShadow() {
+void World::RenderDepthMap() {
 	for(int i = 0; i < shadow->CASCADE_AMOUNT; i++) {
 		shadow->FrameBuffer_Start(i);
-		for(int x = 0; x < worldSize; x++) {
-			for(int y = 0; y < worldSize; y++) {
-				for(int z = 0; z < worldSize; z++) {
-					chunks[x][y][z]->DrawMesh(*shadow->GetShader());
+		for(int x = 0; x < WORLD_SIZE; x++) {
+			for(int y = 0; y < WORLD_SIZE; y++) {
+				for(int z = 0; z < WORLD_SIZE; z++) {
+					chunks[x][y][z]->DrawMesh(*shadow->GetDepthShader());
 				}
 			}
 		}
-		shadow->FrameBuffer_End(i);
+		shadow->ClearBuffer();
 	}
+	shadow->FrameBuffer_End();
 }
 
 Chunk* const World::GetVoxelChunk(const glm::ivec3& voxelPos) {
 	if(voxelPos.y < 0) return nullptr;
-	glm::ivec3 chunkIndex = glm::ivec3(floor(((voxelPos.x + floor(Chunk::size / 2)) / Chunk::size) + worldSize / 2),
+	glm::ivec3 chunkIndex = glm::ivec3(floor(((voxelPos.x + floor(Chunk::size / 2)) / Chunk::size) + WORLD_SIZE / 2),
 									   floor(voxelPos.y / Chunk::size),
-									   floor(((voxelPos.z + floor(Chunk::size / 2)) / Chunk::size) + worldSize / 2));
+									   floor(((voxelPos.z + floor(Chunk::size / 2)) / Chunk::size) + WORLD_SIZE / 2));
 
-	if(chunkIndex.x < 0 || chunkIndex.x >= worldSize || chunkIndex.y < 0 || chunkIndex.y >= worldSize || chunkIndex.z < 0 || chunkIndex.z >= worldSize)
+	if(chunkIndex.x < 0 || chunkIndex.x >= WORLD_SIZE || chunkIndex.y < 0 || chunkIndex.y >= WORLD_SIZE || chunkIndex.z < 0 || chunkIndex.z >= WORLD_SIZE)
 		return nullptr;
 
 	return chunks[chunkIndex.x][chunkIndex.y][chunkIndex.z];
 }
 
 Chunk* const World::GetChunk(const glm::ivec3 chunkIndex) {
-	if(chunkIndex.x <= 0 || chunkIndex.x >= worldSize || chunkIndex.y <= 0 || chunkIndex.y >= worldSize || chunkIndex.z <= 0 || chunkIndex.z >= worldSize)
+	if(chunkIndex.x <= 0 || chunkIndex.x >= WORLD_SIZE || chunkIndex.y <= 0 || chunkIndex.y >= WORLD_SIZE || chunkIndex.z <= 0 || chunkIndex.z >= WORLD_SIZE)
 		return nullptr;
 	return chunks[chunkIndex.x][chunkIndex.y][chunkIndex.z];
 }
@@ -260,13 +265,13 @@ Voxel* World::GetAndRemoveVoxel(const glm::ivec3& position) {
 	}
 	// RIGHT
 	if(position.x == chunk->Position().x + (int)Chunk::size / 2) {
-		if(chunkIndex.x + 1 < worldSize) {
+		if(chunkIndex.x + 1 < WORLD_SIZE) {
 			chunks[chunkIndex.x + 1][chunkIndex.y][chunkIndex.z]->SetDirty(true);
 		}
 	}
 	// FORWARD (positive Z)
 	if(position.z == chunk->Position().z + (int)Chunk::size / 2) {
-		if(chunkIndex.z + 1 < worldSize) {
+		if(chunkIndex.z + 1 < WORLD_SIZE) {
 			chunks[chunkIndex.x][chunkIndex.y][chunkIndex.z + 1]->SetDirty(true);
 		}
 	}
@@ -278,7 +283,7 @@ Voxel* World::GetAndRemoveVoxel(const glm::ivec3& position) {
 	}
 	// UP
 	if(position.y == chunk->Position().y + (int)Chunk::size / 2) {
-		if(chunkIndex.y + 1 < worldSize) {
+		if(chunkIndex.y + 1 < WORLD_SIZE) {
 			chunks[chunkIndex.x][chunkIndex.y + 1][chunkIndex.z]->SetDirty(true);
 		}
 	}
@@ -296,22 +301,22 @@ Voxel* World::GetAndRemoveVoxel(const glm::ivec3& position) {
 	return voxel;
 }
 
-int World::TotalBlocks() {
+int World::TotalVoxels() {
 	return totalVoxels;
 }
 
 void World::GetAllVoxels(std::vector<Voxel*>& voxels) {
-	for(int y = 0; y < worldSize; y++) {
-		for(int z = 0; z < worldSize; z++) {
-			for(int x = 0; x < worldSize; x++) {
-				chunks[x][y][z]->GetVoxels(voxels);
+	for(int y = 0; y < WORLD_SIZE; y++) {
+		for(int z = 0; z < WORLD_SIZE; z++) {
+			for(int x = 0; x < WORLD_SIZE; x++) {
+				chunks[x][y][z]->GetAllVoxelsInChunk(voxels);
 			}
 		}
 	}
 }
 
 glm::ivec3 World::GetChunkIndex(glm::vec3 voxelPos) {
-	return glm::ivec3(floor(((voxelPos.x + floor(Chunk::size / 2)) / Chunk::size) + worldSize / 2),
+	return glm::ivec3(floor(((voxelPos.x + floor(Chunk::size / 2)) / Chunk::size) + WORLD_SIZE / 2),
 					  floor((voxelPos.y / Chunk::size)),
-					  floor(((voxelPos.z + floor(Chunk::size / 2)) / Chunk::size) + worldSize / 2));
+					  floor(((voxelPos.z + floor(Chunk::size / 2)) / Chunk::size) + WORLD_SIZE / 2));
 }

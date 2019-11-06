@@ -24,11 +24,11 @@ void FileHandler::OpenWindow(FileHandler::Window window) {
 	currentOpen = window;
 }
 
-void FileHandler::ShowOpenWindow() {
+void FileHandler::ShowOpenWindow(World& world) {
 	switch(currentOpen) {
-		case FileHandler::Window::FILE_OPEN:	LoadFileDialog(); break;
-		case FileHandler::Window::FILE_SAVE:	SaveFileDialog(); break;
-		case FileHandler::Window::FILE_EXPORT:	ExportFileDialog(); break;
+		case FileHandler::Window::FILE_OPEN:	LoadFileDialog(world); break;
+		case FileHandler::Window::FILE_SAVE:	SaveFileDialog(world); break;
+		case FileHandler::Window::FILE_EXPORT:	ExportFileDialog(world); break;
 	}
 }
 
@@ -36,7 +36,7 @@ bool FileHandler::IsWindowOpen() const {
 	return (currentOpen == Window::NONE) ? true : false;
 }
 
-bool FileHandler::LoadFileDialog() {
+bool FileHandler::LoadFileDialog(World& world) {
 	bool wasSuccessful = false;
 
 	ShowMessageBox();
@@ -57,7 +57,7 @@ bool FileHandler::LoadFileDialog() {
 	ImGui::SameLine();
 
 	if(ImGui::Button("Open", ImVec2(100, 19))) {
-		switch(Data::LoadVoxelData((currentDirectory + selectedFileName).data())) {
+		switch(Data::LoadVoxelData(world, (currentDirectory + selectedFileName).data())) {
 			case Data::SUCCESS: 
 				wasSuccessful = true;
 				SetPopupMessage("File loaded successfully!", MessageBoxType::SUCCESS);
@@ -83,7 +83,7 @@ bool FileHandler::LoadFileDialog() {
 	return wasSuccessful;
 }
 
-bool FileHandler::SaveFileDialog() {
+bool FileHandler::SaveFileDialog(World& world) {
 	ShowMessageBox();
 
 	ImGui::Begin("Save File", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse);
@@ -110,11 +110,11 @@ bool FileHandler::SaveFileDialog() {
 				selectedFileName.append(VOXEL_FILE_EXT);
 			}
 
-			if(Data::SaveVoxelData((currentDirectory + selectedFileName).data())) {
+			if(Data::SaveVoxelData(world, (currentDirectory + selectedFileName).data())) {
 				SetPopupMessage("Successfully saved file!", MessageBoxType::SUCCESS);
 				hasSearched = false;
 			} else {
-				SetPopupMessage(("Unable to open file: " + currentDirectory + selectedFileName).data(), MessageBoxType::ERROR_);
+				SetPopupMessage(("Unable to save file: " + currentDirectory + selectedFileName).data(), MessageBoxType::ERROR_);
 			}
 		}
 	}
@@ -132,7 +132,7 @@ bool FileHandler::SaveFileDialog() {
 	return false;
 }
 
-bool FileHandler::ExportFileDialog() {
+bool FileHandler::ExportFileDialog(World& world) {
 	ShowMessageBox();
 
 	ImGui::Begin("Export File", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse);
@@ -159,7 +159,7 @@ bool FileHandler::ExportFileDialog() {
 				selectedFileName.append(COLLADA_FILE_EXT);
 			}
 
-			Data::Handler handler = Data::VoxelExport((currentDirectory + selectedFileName).data());
+			Data::Handler handler = Data::VoxelExport(world, (currentDirectory + selectedFileName).data());
 
 			if(handler == Data::SUCCESS) {
 				SetPopupMessage(("Successfully exported file!\n" + currentDirectory + selectedFileName).data(), MessageBoxType::SUCCESS);

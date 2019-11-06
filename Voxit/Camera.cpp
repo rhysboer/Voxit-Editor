@@ -189,8 +189,7 @@ void Frustum::UpdateFrustum(const Camera& camera) {
 	for(int i = 0; i < 8; i++) {
 		temp = inverseProjectionView * glm::vec4(points[i], 1.0f);
 		points[i] = glm::vec3(temp) / temp.w;
-		
-		// Midpoint
+
 		center += points[i];
 	}
 

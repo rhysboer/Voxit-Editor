@@ -8,6 +8,8 @@
 #include "imgui_stdlib.h"
 #include "Icons.h"
 
+#include "World.h"
+
 class FileHandler {
 public:
 	FileHandler();
@@ -21,7 +23,7 @@ public:
 	};
 
 	void OpenWindow(FileHandler::Window window);
-	void ShowOpenWindow();
+	void ShowOpenWindow(World& world);
 
 	bool IsWindowOpen() const;
 private:
@@ -45,11 +47,11 @@ private:
 	};
 
 	// Returns true if file was opened
-	bool LoadFileDialog(); // std::vector<Voxel>& data
+	bool LoadFileDialog(World& world); // std::vector<Voxel>& data
 	// Returns true if file was successfully saved
-	bool SaveFileDialog(); // const std::map<int, Voxel>& data
+	bool SaveFileDialog(World& world); // const std::map<int, Voxel>& data
 	// Returns true if file was exported to OBJ successfully
-	bool ExportFileDialog(); // const std::map<int, Voxel>& data
+	bool ExportFileDialog(World& world); // const std::map<int, Voxel>& data
 
 	void Explorer(const char* filter);
 

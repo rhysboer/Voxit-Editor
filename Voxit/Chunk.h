@@ -9,7 +9,7 @@
 class World;
 class Chunk {
 public:
-	Chunk(glm::vec3 pos, glm::ivec3 index);
+	Chunk(World* world, glm::vec3 pos, glm::ivec3 index);
 	~Chunk();
 
 	enum class Direction {
@@ -32,8 +32,13 @@ public:
 	// Returns the voxel pointer removed from the chunk, and sets spot nullptr. user must delete pointer
 	Voxel* RemoveVoxel(const glm::vec3& pos);
 
+	// Clears an entire chunk
+	void ClearChunk();
+
+	// Returns a single voxel at a given position, nullptr if no voxel or out of position
 	Voxel* GetVoxel(const glm::vec3 position) const;
-	void GetVoxels(std::vector<Voxel*>& voxels) const;
+	// Returns all the voxels in a chunk
+	void GetAllVoxelsInChunk(std::vector<Voxel*>& voxels) const;
 
 	glm::vec3 Position();
 	glm::ivec3 Index();
@@ -51,6 +56,7 @@ private:
 	glm::vec3 worldPosition;
 	glm::ivec3 worldIndex;
 
+	World* world;
 	Voxel* voxels[size][size][size];
 
 	// If dirty, regenerate mesh
