@@ -5,9 +5,10 @@ Developed in c++ and OpenGL.
 
 ## Description
 
-Voxit started off as a fun little project I wanted to make on the side of another project I am working on. It grew into more than just a little fun project and into a serious one that I spent a lot of time researching and studying, to implement features and algorithms. Including a custom made COLLADA .dae file exporter, navigating a 3D grid with a raycast, cascading shadow maps and custom made file explorer.  
+Voxit is a little modeling software I developed for fun and a refresher for 3D graphics and C++, after spending so much time in Unity3D and C#. A lot of stuff was added just for learning and my own interest, for example the Cascading Shadow Maps (CSM), a custom made File Explorer and the Model Exporting.
+This sofware wasn't designed to be used in actual game development and more just for fun and for other people who wanted into how I implemented some of the features.  
 
-I've added a few example models in the 'Example' folder, load any .vxt in Voxit to view.
+I've added a few example models in the 'Example' folder, load any .vxt file in Voxit to view.
 
 ## Features
 
