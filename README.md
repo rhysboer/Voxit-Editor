@@ -6,7 +6,7 @@ Developed in c++ and OpenGL.
 ## Description
 
 Voxit is a little modeling software I developed for fun and a refresher for 3D graphics and C++, after spending so much time in Unity3D and C#. A lot of stuff was added just for learning and my own interest, for example the Cascading Shadow Maps (CSM), a custom made File Explorer and the Model Exporting.
-This sofware wasn't designed to be used in actual game development and more just for fun and for other people who wanted into how I implemented some of the features.  
+This sofware wasn't designed to be used in actual game development and more just for fun and for other people who wanted too see how I implemented some of the features.  
 
 I've added a few example models in the 'Example' folder, load any .vxt file in Voxit to view.
 
