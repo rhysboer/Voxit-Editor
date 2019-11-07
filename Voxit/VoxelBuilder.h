@@ -5,6 +5,7 @@
 
 #include "imgui.h"
 #include "imgui_glm.h"
+#include "imgui_internal.h"
 
 #include "Raycaster.h"
 #include "Input.h"

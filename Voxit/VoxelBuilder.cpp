@@ -22,13 +22,25 @@ VoxelBuilder::VoxelBuilder() : history(historySize) {
 }
 
 VoxelBuilder::~VoxelBuilder() {
-	// DELETE STUFF HERE
-
+	world->DestroyWorld();
 	history.Clear();
 }
 
 void VoxelBuilder::OnUpdate() {
 	DrawGUI();
+
+	if(Settings::useAnimateLight && Settings::useLighting) {
+		Settings::angle = fmod(Settings::angle + Time::DeltaTime() * Settings::rotationSpeed, 360.0f);
+
+		float sin = glm::sin(glm::radians(Settings::angle));
+		float cos = glm::cos(glm::radians(Settings::angle));
+		
+		glm::vec3 dVec = Settings::SUN_DIRECTION;
+		
+		Settings::sunDirection.x = (cos * dVec.x) + (sin * dVec.z);
+		Settings::sunDirection.z = (cos * dVec.z) - (sin * dVec.x);
+	}
+
 
 	switch(currentTool) {
 		case VoxelBuilder::ToolIDs::PLACE: {
@@ -260,7 +272,7 @@ void VoxelBuilder::ToolGradient() {
 			if(IsValidMapPos(hit.position)) {
 				selector.SetActive(true);
 				selector.SetStart(hit.position);
-				isSelecting = true;
+isSelecting = true;
 			}
 		}
 
@@ -273,44 +285,44 @@ void VoxelBuilder::ToolGradient() {
 		}
 
 	} else {
-		if(isSelecting == true) { // OnMouse Up
-			glm::vec3 dist = selector.GetDistance();
-			glm::vec3 start = selector.GetStart();
-			unsigned int size = dist.x * dist.y * dist.z;
-			
-			std::vector<Voxel> voxels = std::vector<Voxel>();
+	if(isSelecting == true) { // OnMouse Up
+		glm::vec3 dist = selector.GetDistance();
+		glm::vec3 start = selector.GetStart();
+		unsigned int size = dist.x * dist.y * dist.z;
 
-			glm::vec3 position;
-			glm::vec3 offset = glm::vec3(
-				(start.x > selector.GetEnd().x) ? -1.0f : 1.0f,
-				(start.y > selector.GetEnd().y) ? -1.0f : 1.0f,
-				(start.z > selector.GetEnd().z) ? -1.0f : 1.0f
-			);
-			int index = 0;
-			float max = glm::distance(selector.GetStart(), selector.GetEnd()) + 1;
-			for(int y = 0; y < dist.y; y++) {
-				for(int z = 0; z < dist.z; z++) {
-					for(int x = 0; x < dist.x; x++, index++) {
-						position = start + (glm::vec3(x, y, z) * offset);
+		std::vector<Voxel> voxels = std::vector<Voxel>();
 
-						if(IsValidMapPos(position) && world->GetVoxel(position) == nullptr) {
-							float distance = glm::distance(start + glm::vec3(x, y, z) * offset, selector.GetEnd()) / max;
+		glm::vec3 position;
+		glm::vec3 offset = glm::vec3(
+			(start.x > selector.GetEnd().x) ? -1.0f : 1.0f,
+			(start.y > selector.GetEnd().y) ? -1.0f : 1.0f,
+			(start.z > selector.GetEnd().z) ? -1.0f : 1.0f
+		);
+		int index = 0;
+		float max = glm::distance(selector.GetStart(), selector.GetEnd()) + 1;
+		for(int y = 0; y < dist.y; y++) {
+			for(int z = 0; z < dist.z; z++) {
+				for(int x = 0; x < dist.x; x++, index++) {
+					position = start + (glm::vec3(x, y, z) * offset);
 
-							Voxel voxel = Voxel();
-							voxel.colour = glm::mix(voxelColourSecondary, voxelColour, distance);
-							voxel.position = position;
-							voxels.push_back(voxel);
-						}
+					if(IsValidMapPos(position) && world->GetVoxel(position) == nullptr) {
+						float distance = glm::distance(start + glm::vec3(x, y, z) * offset, selector.GetEnd()) / max;
+
+						Voxel voxel = Voxel();
+						voxel.colour = glm::mix(voxelColourSecondary, voxelColour, distance);
+						voxel.position = position;
+						voxels.push_back(voxel);
 					}
 				}
 			}
-
-			world->AddBlocks(voxels);
-			AddToHistory(voxels, HistoryNode::UndoType::ADD);
 		}
 
-		selector.SetActive(false);
-		isSelecting = false;
+		world->AddBlocks(voxels);
+		AddToHistory(voxels, HistoryNode::UndoType::ADD);
+	}
+
+	selector.SetActive(false);
+	isSelecting = false;
 	}
 }
 
@@ -350,7 +362,7 @@ void VoxelBuilder::DrawGUI() {
 			ImGui::Checkbox("Show Voxel Outline", &Settings::useVoxelOutline);
 			ImGui::Checkbox("Display Highlighter Size", &Settings::useHighlighterSize);
 
-			ImGui::Text("Background Colour");
+			ImGui::Text("Background Colour (Drag)");
 			ImGui::ColorEdit3("", glm::value_ptr(Settings::backgroundColour));
 
 			ImGui::Spacing();
@@ -358,117 +370,38 @@ void VoxelBuilder::DrawGUI() {
 			ImGui::Spacing();
 			ImGui::Text("Lighting Settings");
 
-			ImGui::Checkbox("Enable Lighting", &Settings::useLighting);
-			ImGui::Checkbox("Enable Shadows", &Settings::useShadow);
+			if(ImGui::Checkbox("Enable Lighting", &Settings::useLighting) && !Settings::useLighting) {
+				Settings::useAnimateLight = false;
+			}
+			ImGui::Checkbox("Auto Rotate", &Settings::useAnimateLight);
+			ImGui::Text("Rotation");
 
-			ImGui::Text("Sun Direction: (X, Y, Z)");
-			ImGui::DragFloat3("", glm::value_ptr(Settings::sunDirection), 0.1f, -1.0f, 1.0f, "%.1f");
-			Settings::sunDirection = glm::clamp(Settings::sunDirection, glm::vec3(-1.0f), glm::vec3(1.0f));
+			// Rotation
+			if(Settings::useAnimateLight) {
+				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 
-			glm::vec2 cursorPos = glmToimgui::ImVec2ToVec2(ImGui::GetCursorScreenPos());
-			canvasCenter = cursorPos + (canvasSize / 2.0f);
+				ImVec4 col_bg = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
+				ImVec4 col_sl = ImGui::GetStyleColorVec4(ImGuiCol_SliderGrab);
 
-			ImGui::Dummy(glmToimgui::Vec2ToImVec2(canvasSize));
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(col_bg.x, col_bg.y, col_bg.z, 0.3f));
+				ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(col_sl.x, col_sl.y, col_sl.z, 0.3f));
+			}
+			if(ImGui::SliderFloat("", &Settings::angle, 0.0f, 360.0f, "%.1f")){
+				float sin = glm::sin(glm::radians(Settings::angle));
+				float cos = glm::cos(glm::radians(Settings::angle));
 
-			glm::vec3 position = glm::vec3(canvasCenter.x, canvasCenter.y, 0.0f) + (Settings::sunDirection * 75.0f);
+				glm::vec3 dVec = Settings::SUN_DIRECTION;
 
-			// GROUND
-			drawList->AddLine(ImVec2(0.0f, canvasCenter.y + 20.0f), ImVec2(canvasCenter.x + canvasSize.x, canvasCenter.y + 20.0f), IM_COL32(64, 64, 64, 255), 2.0f);
-
-			float size = 5.0f + (Settings::sunDirection.z * 2.0f);
-			if(position.z <= 0.0f) {
-				drawList->AddRectFilled(glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(-15.0f, -15.0f)), glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(15.0f, 15.0f)), IM_COL32(128, 128, 128, 64)); // BACK
-			
-				// SOURCE
-				drawList->AddCircleFilled(glmToimgui::Vec2ToImVec2(glm::vec2(position.x, position.y)), size, IM_COL32(255, 255, 0, 255));
-				
-				drawList->AddRectFilled(glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(-25.0f, -25.0f)), glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(25.0f, 25.0f)), IM_COL32(128, 128, 128, 128)); // FRONT
-			} else {
-				drawList->AddRectFilled(glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(-15.0f, -15.0f)), glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(15.0f, 15.0f)), IM_COL32(128, 128, 128, 64)); // BACK
-				drawList->AddRectFilled(glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(-25.0f, -25.0f)), glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(25.0f, 25.0f)), IM_COL32(128, 128, 128, 128)); // FRONT
-			
-				// SOURCE
-				drawList->AddCircleFilled(glmToimgui::Vec2ToImVec2(glm::vec2(position.x, position.y)), size, IM_COL32(255, 255, 0, 255));
+				Settings::sunDirection.x = (cos * dVec.x) + (sin * dVec.z);
+				Settings::sunDirection.z = (cos * dVec.z) - (sin * dVec.x);
+			}
+			if(Settings::useAnimateLight) {
+				ImGui::PopItemFlag();
+				ImGui::PopStyleColor(2);
 			}
 
-			ImVec2 pnt_backTopL		= glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(-15.0f, -15.0f));
-			ImVec2 pnt_backTopR		= glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(15.0f, -15.0f));
-			ImVec2 pnt_backBotL		= glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(-15.0f, 15.0f));
-			ImVec2 pnt_backBotR		= glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(15.0f, 15.0f));
-
-			ImVec2 pnt_frontTopL	= glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(-25.0f, -25.0f));
-			ImVec2 pnt_frontTopR	= glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(25.0f, -25.0f));
-			ImVec2 pnt_frontBotL	= glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(-25.0f, 25.0f));
-			ImVec2 pnt_frontBotR	= glmToimgui::Vec2ToImVec2(canvasCenter + glm::vec2(25.0f, 25.0f));
-
-			// LEFT
-			if(glm::dot(-Settings::sunDirection, glm::vec3(1.0f, 0.0f, 0.0f)) > 0.1f) {
-				// BACK
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backTopL, IM_COL32(128, 128, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backBotL, IM_COL32(128, 128, 0, 255));
-
-				// FRONT
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontTopL, IM_COL32(255, 255, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontBotL, IM_COL32(255, 255, 0, 255));
-			}
-
-			// RIGHT
-			if(glm::dot(-Settings::sunDirection, glm::vec3(-1.0f, 0.0f, 0.0f)) > 0.1f) {
-				// BACK
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backTopR, IM_COL32(128, 128, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backBotR, IM_COL32(128, 128, 0, 255));
-
-				// FRONT
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontTopR, IM_COL32(255, 255, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontBotR, IM_COL32(255, 255, 0, 255));
-			}
-
-			// TOP
-			if(glm::dot(-Settings::sunDirection, glm::vec3(0.0f, 1.0f, 0.0f)) > 0.1f) {
-				// LEFT
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backTopL, IM_COL32(128, 128, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontTopL, IM_COL32(255, 255, 0, 255));
-
-				// RIGHT
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backTopR, IM_COL32(128, 128, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontTopR, IM_COL32(255, 255, 0, 255));
-			}
-
-			// BOT
-			if(glm::dot(-Settings::sunDirection, glm::vec3(0.0f, -1.0f, 0.0f)) > 0.1f) {
-				// LEFT
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backBotL, IM_COL32(128, 128, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontBotL, IM_COL32(255, 255, 0, 255));
-
-				// RIGHT
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backBotR, IM_COL32(128, 128, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontBotR, IM_COL32(255, 255, 0, 255));
-			}
-
-			// FRONT
-			if(glm::dot(-Settings::sunDirection, glm::vec3(0.0f, 0.0f, -1.0f)) > 0.1f) {
-				// TOP
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontTopL, IM_COL32(255, 255, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontTopR, IM_COL32(255, 255, 0, 255));
-
-				// BOT
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontBotL, IM_COL32(255, 255, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_frontBotR, IM_COL32(255, 255, 0, 255));
-			}
-
-			// BACK
-			if(glm::dot(-Settings::sunDirection, glm::vec3(0.0f, 0.0f, 1.0f)) > 0.1f) {
-				// TOP
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backTopL, IM_COL32(128, 128, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backTopR, IM_COL32(128, 128, 0, 255));
-
-				// BOT
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backBotL, IM_COL32(128, 128, 0, 255));
-				drawList->AddLine(ImVec2(position.x, position.y), pnt_backBotR, IM_COL32(128, 128, 0, 255));
-			}
-			
-			drawList->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(position.x - 10.0f, position.y + ((Settings::sunDirection.y > 0.0f) ? 7.0f : -20.0f)), IM_COL32(255, 255, 255, 255), "Sun");
-			drawList->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(canvasCenter.x - 15.0f, canvasCenter.y + ((Settings::sunDirection.y < 0.0f) ? 25.0f : -40.0f)), IM_COL32(255, 255, 255, 255), "Voxel");
+			ImGui::Text("Rotation Speed");
+			ImGui::SliderFloat("##rotateSpeed", &Settings::rotationSpeed, Settings::ROTATION_SPEED_MIN, Settings::ROTATION_SPEED_MAX);
 
 			ImGui::EndMenu();
 		}
