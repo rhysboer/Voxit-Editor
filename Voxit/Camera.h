@@ -22,8 +22,6 @@ public:
 	void SetFar(const float& value);
 	void SetDirty();
 
-	std::vector<glm::vec3> FrustumPoints();
-
 	glm::mat4 View();
 	glm::mat4 Projection();
 

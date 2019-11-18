@@ -23,10 +23,10 @@ I've added a few example models in the 'Example' folder, load any .vxt file in V
 ## Controls & Shortcuts
 
 Movement: `W, A, S, D`  
-Up & Down: `E, Q`  
 Fast Movement: `Left Shift`
+Up & Down: `E, Q`  
  
-Undo: `Ctrl + Z`   
+Undo: `Ctrl + Z`
 Pencil: `B`  
 Eye Dropper: `I`  
 Eraser: `F`  
@@ -40,6 +40,7 @@ Gradient: `G`
 * Improved Shadow Mapping
 * More Lighting Settings
 * Changeable Grid Size
+* Assignable Shortcuts
 * Clean Up Code
 * Optimisations
 

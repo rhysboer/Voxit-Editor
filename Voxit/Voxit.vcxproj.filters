@@ -34,12 +34,6 @@
     <Filter Include="Source Files\tinyxml">
       <UniqueIdentifier>{19dc7866-ac81-4011-beb4-3235d257e5ee}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Experimental">
-      <UniqueIdentifier>{e2183a6d-ae85-4ca8-a3f0-6433b49af963}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Experimental">
-      <UniqueIdentifier>{c563810e-7522-444d-ba3e-317eeb170dc6}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -123,16 +117,16 @@
     <ClCompile Include="tinyxml2.cpp">
       <Filter>Source Files\tinyxml</Filter>
     </ClCompile>
-    <ClCompile Include="Chunk.cpp">
-      <Filter>Source Files\Experimental</Filter>
-    </ClCompile>
-    <ClCompile Include="World.cpp">
-      <Filter>Source Files\Experimental</Filter>
-    </ClCompile>
     <ClCompile Include="Settings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ShadowMapping.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Chunk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="World.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -233,16 +227,16 @@
     <ClInclude Include="tinyxml2.h">
       <Filter>Header Files\tinyxml</Filter>
     </ClInclude>
-    <ClInclude Include="Chunk.h">
-      <Filter>Header Files\Experimental</Filter>
-    </ClInclude>
-    <ClInclude Include="World.h">
-      <Filter>Header Files\Experimental</Filter>
-    </ClInclude>
     <ClInclude Include="Settings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ShadowMapping.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Chunk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="World.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

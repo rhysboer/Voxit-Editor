@@ -44,7 +44,8 @@ Camera::~Camera() {
 void Camera::InputHandler() {
 	glm::vec3 translate = glm::vec3(0.0f);
 
-	if(Input::IsKeyDown(GLFW_KEY_W)) //input.IsKeyDown(GLFW_KEY_W)) // FORWARD
+	float boost = 0.0f;
+	if(Input::IsKeyDown(GLFW_KEY_W)) // FORWARD
 		translate = this->front;
 	if(Input::IsKeyDown(GLFW_KEY_S)) // BACKWARD
 		translate = -this->front;
@@ -56,13 +57,15 @@ void Camera::InputHandler() {
 		translate = this->up;
 	if(Input::IsKeyDown(GLFW_KEY_Q)) // DOWN
 		translate = -this->up;
+	if(Input::IsKeyDown(GLFW_KEY_LEFT_SHIFT)) // Speed
+		boost = 20.0f;
 
 	if(Input::IsMouseKeyDown(GLFW_MOUSE_BUTTON_2)) { // RIGHT CLICK
 		glm::vec2 deltaPos = Input::MouseDeltaPosition();
 		Rotate(deltaPos.x, deltaPos.y);
 	}
 
-	position += (translate * Time::DeltaTime() * CAMERA_SPEED);
+	position += (translate * Time::DeltaTime() * (CAMERA_SPEED + boost));
 	UpdateCamera();
 }
 
@@ -82,37 +85,6 @@ void Camera::SetFar(const float& value) {
 void Camera::SetDirty() {
 	isDirty = true;
 }
-
-
-std::vector<glm::vec3> Camera::FrustumPoints() {
-	if(isDirty) UpdateCamera();
-
-	glm::mat4 inverseProjectionView = glm::inverse(this->projection * this->view);
-	
-	std::vector<glm::vec3> points = {
-		// NEAR
-		glm::vec3(-1.0f, 1.0f,-1.0f), // TOP LEFT	  z = -1.0
-		glm::vec3( 1.0f, 1.0f,-1.0f), // TOP RIGHT	  z = -1.0
-		glm::vec3( 1.0f,-1.0f,-1.0f), // BOT LEFT	  z = -1.0
-		glm::vec3(-1.0f,-1.0f,-1.0f), // BOT RIGHT	  z = -1.0
-
-		// FAR
-		glm::vec3(-1.0f, 1.0f, 1.0f), // TOP LEFT
-		glm::vec3( 1.0f, 1.0f, 1.0f), // TOP RIGHT
-		glm::vec3( 1.0f,-1.0f, 1.0f), // BOT LEFT
-		glm::vec3(-1.0f,-1.0f, 1.0f)  // BOT RIGHT
-	};
-
-	glm::vec4 temp;
-	for(int i = 0; i < 8; i++) {
-		temp = inverseProjectionView * glm::vec4(points[i], 1.0f);
-		points[i] = glm::vec3(temp / temp.w);
-		//points[i] = inverseProjectionView * glm::vec4(points[i], 1.0f);
-	}
-
-	return points;
-}
-
 
 glm::mat4 Camera::View() {
 	if(isDirty) UpdateCamera();
