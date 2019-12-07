@@ -23,10 +23,10 @@ I've added a few example models in the 'Example' folder, load any .vxt file in V
 ## Controls & Shortcuts
 
 Movement: `W, A, S, D`  
-Fast Movement: `Left Shift`
+Fast Movement: `Left Shift`  
 Up & Down: `E, Q`  
  
-Undo: `Ctrl + Z`
+Undo: `Ctrl + Z`  
 Pencil: `B`  
 Eye Dropper: `I`  
 Eraser: `F`  
@@ -53,3 +53,7 @@ You can download and compile the source code for Voxit here or download a precom
 * [Imgui](https://github.com/ocornut/imgui) - GUI
 * [Glm](https://glm.g-truc.net/0.9.9/index.html) - 3D Math Library
 * [TinyXML-2](https://github.com/leethomason/tinyxml2) - XML parser
+
+#
+
+![Image description](https://www.rhysboer.com/project/images/vox/vox_4.png)
